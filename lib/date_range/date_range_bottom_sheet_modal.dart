@@ -43,11 +43,11 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
     return isTrue;
 
   }
-  void _onDateReset(){
-    Navigator.of(context).pop();
-
-
-  }
+  // void _onDateReset(){
+  //   Navigator.of(context).pop();
+  //
+  //
+  // }
   @override
   Widget build(BuildContext context) {
     return
@@ -66,9 +66,9 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        IconButton(onPressed: () => Navigator.of(context).pop(), icon: Icon(Icons.close)),
-                        Text('Select date range', style: TextStyle(fontFamily: 'Roboto', fontSize: 20.0, fontWeight: FontWeight.w500),),
-                        Spacer(),
+                        IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
+                        const Text('Select date range', style: TextStyle(fontFamily: 'Roboto', fontSize: 20.0, fontWeight: FontWeight.w500),),
+                        const Spacer(),
                         TextButton(
                             onPressed:(){
                               Navigator.of(context).pop();
@@ -95,7 +95,7 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
                         hasIcon: true,
                         name: 'Select date',
                         subName: 'Date',
-                        maximumDate: _startDate != null ? DateTime.parse(DateTime.now().toString()).subtract(Duration(days: 1)) : null,
+                        maximumDate: _startDate != null ? DateTime.parse(DateTime.now().toString()).subtract(const Duration(days: 1)) : null,
                         onChange: (val) {
                           setState(() {
                             _startDate = val;

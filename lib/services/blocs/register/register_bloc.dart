@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:formz/formz.dart';
 import 'package:worktracker/services/blocs/register/register_state.dart';
 
@@ -15,7 +16,6 @@ class RegisterCubit extends Cubit<RegisterState> {
   void fullaNameChanged(String value) {
     final firstName = FirstName.dirty(value);
     final lastName = LastName.dirty(value);
-    print("$firstName $lastName");
     emit(state.copyWith(
       firstName: firstName,
       status: Formz.validate([
@@ -41,7 +41,7 @@ class RegisterCubit extends Cubit<RegisterState> {
 
   void emailChanged(String value) {
     final email = UserName.dirty(value);
-    print(email);
+    debugPrint("$email");
     emit(state.copyWith(
       userName: email,
       status: Formz.validate([
@@ -55,7 +55,6 @@ class RegisterCubit extends Cubit<RegisterState> {
 
   void passwordChanged(String value) {
     final password = Password.dirty(value);
-    print(password);
     emit(state.copyWith(
       password: password,
       status: Formz.validate([

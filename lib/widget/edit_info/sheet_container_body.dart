@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 import 'package:worktracker/services/models/user.dart';
 
 
@@ -34,25 +33,25 @@ class SheetContainerBody extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _SheetContainerBodyState createState() => _SheetContainerBodyState();
+  SheetContainerBodyState createState() => SheetContainerBodyState();
 }
 
-class _SheetContainerBodyState extends State<SheetContainerBody> {
-  TextEditingController _firstNameController = TextEditingController();
-  TextEditingController _lastNameController = TextEditingController();
-  TextEditingController _jobTitleController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
-  FocusNode _nameFocusNode =FocusNode();
-  FocusNode _lastNameFocusNode =FocusNode();
-  FocusNode _jobTitleFocusNode =FocusNode();
-  FocusNode _passwordFocuseNode =FocusNode();
+class SheetContainerBodyState extends State<SheetContainerBody> {
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _jobTitleController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  late  FocusNode _nameFocusNode =FocusNode();
+  late  FocusNode _lastNameFocusNode =FocusNode();
+  late  FocusNode _jobTitleFocusNode =FocusNode();
+  late  FocusNode _passwordFocuseNode =FocusNode();
 
-  Completer<GoogleMapController> _controller = Completer();
-  Location _location = Location();
+  final Completer<GoogleMapController> _controller = Completer();
+  //final Location _location = Location();
   bool _nameFocused = false;
   bool _lastNameFocused = false;
   bool _jobTitleFocused = false;
-  bool _passwrodFocused = false;
+  bool _passwordFocused = false;
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(40.4018, 44.6434),
     zoom: 15,
@@ -81,6 +80,7 @@ class _SheetContainerBodyState extends State<SheetContainerBody> {
     _nameFocusNode = FocusNode();
     _lastNameFocusNode = FocusNode();
     _jobTitleFocusNode = FocusNode();
+    _passwordFocuseNode = FocusNode();
     _nameFocusNode.addListener(_onNameFocusChange);
     _lastNameFocusNode.addListener(_onLastNameFocusChange);
     _jobTitleFocusNode.addListener(_onJobTitleFocusChange);
@@ -109,7 +109,7 @@ class _SheetContainerBodyState extends State<SheetContainerBody> {
   }
   void _onPasswordFocuseChange() {
     setState(() {
-      _passwrodFocused = _passwordFocuseNode.hasFocus ? true : false;
+      _passwordFocused = _passwordFocuseNode.hasFocus ? true : false;
     });
   }
   void _onFirstNameTextChange(name) {
@@ -341,7 +341,7 @@ class _SheetContainerBodyState extends State<SheetContainerBody> {
                   padding: const EdgeInsets.only(top: 12.0,left: 12.0),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: _jobTitleFocused ? const Color(0xFF569AFF) : const Color(0xFFCFD8DC),
+                      color: _passwordFocused ? const Color(0xFF569AFF) : const Color(0xFFCFD8DC),
                       width: 1.0,
                     ),
                     borderRadius: const BorderRadius.all(Radius.circular(4.0)),
@@ -351,7 +351,7 @@ class _SheetContainerBodyState extends State<SheetContainerBody> {
                     readOnly: widget.isInfo ==true  ?  false:true,
                     enabled: widget.isInfo ==true  ?  true:false,
                     controller: _passwordController..value = _passwordController.value,
-                    focusNode: _jobTitleFocusNode,
+                    focusNode: _passwordFocuseNode,
                     onChanged: (password) => _onPasswordChange(password),
                     inputFormatters: [LengthLimitingTextInputFormatter(30)],
                     style: const TextStyle(

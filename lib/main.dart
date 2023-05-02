@@ -16,7 +16,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
 import 'package:worktracker/base_data/base_api.dart';
-import 'package:worktracker/utils/user_preferences.dart';
 import 'screens/home_screen.dart';
 import 'screens/home_screen_form/user_form.dart';
 import 'services/blocs/login/login_bloc.dart';
@@ -24,7 +23,6 @@ import 'services/blocs/register/register_bloc.dart';
 import 'services/blocs/user/user_bloc.dart';
 import 'services/blocs/user/user_state.dart';
 import 'services/data_provider/user_data_provider.dart';
-import 'services/data_provider/users_info_api.dart';
 import 'services/models/user_actions.dart';
 import 'services/data_provider/session_data_providers.dart';
 bool isAdmin = false;
@@ -46,10 +44,9 @@ void startCallback() {
 }
 
 class MyTaskHandler extends TaskHandler {
-  UserActionsProvider? _userActionsProvider;
+  //UserActionsProvider? _userActionsProvider;
   final sessionDataProvider = SessionDataProvider();
   SendPort? _sendPort;
-  int _eventCount = 0;
 
   Future<void> updateLocation(UserLocation location)async{
     Map userData = {"location": {
@@ -71,15 +68,15 @@ class MyTaskHandler extends TaskHandler {
       if (response.statusCode == 200) {
 
  if (kDebugMode) {
-   print('Davs davay mernem qezz ${location.lat}    ');
+   debugPrint('Davs davay mernem qezz ${location.lat}    ');
  }
 
       } else {
-        print("failed");
+        debugPrint("failed");
 
       }
     } catch (e) {
-      print(e);
+      debugPrint("$e");
     }
 
   }
@@ -90,7 +87,7 @@ class MyTaskHandler extends TaskHandler {
     // You can use the getData function to get the stored data.
     final customData =
     await FlutterForegroundTask.getData<String>(key: 'customData');
-    print('customData: $customData');
+    debugPrint('customData: $customData');
   }
 
   @override
@@ -111,7 +108,6 @@ class MyTaskHandler extends TaskHandler {
     // Send data to the main isolate.
     sendPort?.send(timestamp);
 
-    _eventCount++;
 
     if (kDebugMode) {
       print('cicik');
@@ -129,7 +125,7 @@ class MyTaskHandler extends TaskHandler {
   @override
   void onButtonPressed(String id) {
     // Called when the notification button on the Android platform is pressed.
-    print('onButtonPressed >> $id');
+    debugPrint('onButtonPressed >> $id');
   }
 
   @override
@@ -167,7 +163,7 @@ class SecondTaskHandler extends TaskHandler {
     // Send data to the main isolate.
     sendPort?.send(timestamp);
     Position position = await Geolocator.getCurrentPosition();
-    print("2Task ${position.longitude}\n ${position.latitude}");
+    debugPrint("2Task ${position.longitude}\n ${position.latitude}");
   }
 
   @override
@@ -189,7 +185,7 @@ void main() async {
 
   //await LocalNoticeService().setup();
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    print('App was detached!');
+    debugPrint('App was detached!');
   });
 initialization();
   runApp(const MyApp());
@@ -208,12 +204,12 @@ class MyApp extends StatefulWidget {
 
 class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   String? initialMessage;
-  final UserActionsProvider _userActionsProvider = UserActionsProvider();
+  //final UserActionsProvider _userActionsProvider = UserActionsProvider();
   LocationData? _locationData;
 
   late Timer timer;
-  late Position _currentPosition;
-  bool _resolved = false;
+  //late Position _currentPosition;
+  //bool _resolved = false;
   bool serviceEnabled = false;
   ReceivePort? _receivePort;
 
@@ -224,8 +220,8 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         channelName: 'Foreground Notification',
         channelDescription:
         'This notification appears when the foreground service is running.',
-        channelImportance: NotificationChannelImportance.LOW,
-        priority: NotificationPriority.LOW,
+        channelImportance: NotificationChannelImportance.HIGH,
+        priority: NotificationPriority.HIGH,
         iconData: const NotificationIconData(
           resType: ResourceType.mipmap,
           resPrefix: ResourcePrefix.ic,
@@ -235,10 +231,10 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
       ),
       iosNotificationOptions: const IOSNotificationOptions(
         showNotification: true,
-        playSound: false,
+        playSound: true,
       ),
       foregroundTaskOptions: const ForegroundTaskOptions(
-        interval: 120000,
+        interval: 300000,
         isOnceEvent: false,
         autoRunOnBoot: true,
         allowWakeLock: true,
@@ -261,7 +257,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
       final isGranted =
       await FlutterForegroundTask.openSystemAlertWindowSettings();
       if (!isGranted) {
-        print('SYSTEM_ALERT_WINDOW permission denied!');
+        debugPrint('SYSTEM_ALERT_WINDOW permission denied!');
         return false;
       }
     }
@@ -299,13 +295,13 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
       _receivePort = receivePort;
       _receivePort?.listen((message) async {
         if (message is int) {
-          print('eventCount: $message');
+          debugPrint('eventCount: $message');
         } else if (message is String) {
           if (message == 'onNotificationPressed') {
             Navigator.of(context,rootNavigator: true).push(MaterialPageRoute(builder: (_)=>const UserScreen()));
           }
         } else if (message is DateTime) {
-          print('timestamp: ${message.toString()}');
+          debugPrint('timestamp: ${message.toString()}');
         }
       });
 
@@ -337,30 +333,30 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
     });
   }
   Future<void> initPlatformState() async {
-    Location location = new Location();
-    bool _serviceEnabled;
-    PermissionStatus _permissionGranted;
+    Location location =  Location();
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
 
-    _serviceEnabled = await location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
-      if (!_serviceEnabled) {
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
         return;
       }
     }
 
-    _permissionGranted = await location.hasPermission();
-    if (_permissionGranted == PermissionStatus.
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.
 
     denied) {
-      _permissionGranted = await location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
         return;
       }
     }
 
     _locationData = await location.getLocation();
-    print(_locationData);
+    debugPrint("ciki piki _______________________$_locationData");
   }
 
   Future<bool> _handleLocationPermission() async {
@@ -369,24 +365,35 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location services are disabled. Please enable the services')));
+      if(context.mounted){
+
+
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Location services are disabled. Please enable the services')));
+      }
+
       return false;
     }
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are denied')));
+        if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')));
+        }
+
         return false;
       }
     }
     if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location permissions are permanently denied, we cannot request permissions.')));
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Location permissions are permanently denied, we cannot request permissions.')));
+      }
+
       return false;
     }
     return true;
@@ -394,8 +401,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
 
 
-  Locale? _locale;
-      final user = UserPreferences.myUser;
+  //Locale? _locale;
   @override
   Widget build(BuildContext context) {
     final user = UserDataProvider();

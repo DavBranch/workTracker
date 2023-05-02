@@ -6,8 +6,7 @@ import 'package:worktracker/widget/date_field_widget/date_picker.dart';
 class DateFieldWidget extends StatefulWidget {
   final String? name;
   final String? subName;
-  final stream;
-  final onChange;
+  final Function? onChange;
   final bool? hasIcon;
   final String? prefixText;
   final DateTime? minimumDate;
@@ -16,7 +15,6 @@ class DateFieldWidget extends StatefulWidget {
   const DateFieldWidget({
     Key? key,
     required this.name,
-    this.stream,
     this.subName,
     this.hasIcon=false,
     required this.onChange,
@@ -26,10 +24,10 @@ class DateFieldWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _DateFieldWidgetState createState() => _DateFieldWidgetState();
+  DateFieldWidgetState createState() => DateFieldWidgetState();
 }
 
-class _DateFieldWidgetState extends State<DateFieldWidget> {
+class DateFieldWidgetState extends State<DateFieldWidget> {
   DateTime? dateValue;
 
   @override
@@ -50,11 +48,11 @@ class _DateFieldWidgetState extends State<DateFieldWidget> {
                         answer: DateTime.parse(DateFormat('yyyy-MM-dd 00:00').format(DateTime.now())),
                         changeDateTime: (date) {
                           String newDate = getDateToUTC(date.toString());
-                          widget.onChange(newDate);
+                          widget.onChange!(newDate);
                           setState(() { dateValue = date; });
                         },
                         clearDateTime: () {
-                          widget.onChange(null);
+                          widget.onChange!(null);
                        //   setState(() { dateValue  });
                         },
                         maximumDate: widget.maximumDate,
@@ -81,10 +79,10 @@ class _DateFieldWidgetState extends State<DateFieldWidget> {
                           child: TextFormField(
                             controller: TextEditingController()..text = dateValue != null ?  ( DateFormat.yMMMd().format(dateValue!)):'',
                             onChanged: (val){
-                              widget.onChange(dateValue != null ? getDateToUTC(dateValue.toString()) : null);
+                              widget.onChange!(dateValue != null ? getDateToUTC(dateValue.toString()) : null);
                             },
                             onSaved: (val){
-                              widget.onChange(dateValue != null ? getDateToUTC(dateValue.toString()) : null);
+                              widget.onChange!(dateValue != null ? getDateToUTC(dateValue.toString()) : null);
                             },
                             enabled: false,
                             style: const TextStyle(
@@ -115,7 +113,7 @@ class _DateFieldWidgetState extends State<DateFieldWidget> {
                       Positioned(
                         right: 8.0,
                         top: 16.0,
-                        child: Container(
+                        child: SizedBox(
                           width: 24.0,
                           height: 24.0,
                           child: Icon(

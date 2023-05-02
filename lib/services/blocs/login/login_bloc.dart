@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter/material.dart';
 import 'package:formz/formz.dart';
 
 import '../../data_provider/user_data_provider.dart';
@@ -13,7 +14,7 @@ class LoginCubit extends Cubit<LoginState> {
 
   void emailChanged(String value) {
     final email = UserName.dirty(value);
-    print(email);
+    debugPrint("$email");
     emit(state.copyWith(
       email: email,
       status: Formz.validate([email, state.password]),

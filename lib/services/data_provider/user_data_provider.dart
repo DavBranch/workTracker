@@ -2,9 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
 
 import '../../base_data/base_api.dart';
@@ -21,35 +21,31 @@ class UserDataProvider {
 
   static const maxRefreshSeconds = 216000000;
   int seconds = maxAccesSeconds;
-  bool isAcces_Token_TimerActive = false;
-  bool isRefresh_Token_TimerActive = false;
+  bool isAccesTokenTimerActive = false;
+  bool isRefreshTokenTimerActive = false;
 
   get isDarkMode => null;
 
   void startAccessTimer() {
-    Timer.periodic(Duration(seconds: 1), (timer) {
+    Timer.periodic(const Duration(seconds: 1), (timer) {
       if (seconds > 0) {
         seconds--;
-        print(seconds);
       } else {
         timer.cancel();
-        isAcces_Token_TimerActive = true;
+        isAccesTokenTimerActive = true;
 
-        print('timer cancel');
       }
     });
   }
 
   void startRefreshTimer() {
-    Timer.periodic(Duration(milliseconds: 1), (timer) {
+    Timer.periodic(const Duration(milliseconds: 1), (timer) {
       if (seconds > 0) {
         seconds--;
-        print(seconds);
       } else {
         timer.cancel();
-        isRefresh_Token_TimerActive = true;
+        isRefreshTokenTimerActive = true;
 
-        print('timer cancel');
       }
     });
   }
@@ -87,7 +83,8 @@ class UserDataProvider {
     try {
       await sessionDataProvider.deleteAllToken();
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
   }
 
@@ -113,21 +110,20 @@ class UserDataProvider {
       var data = body['data'];
 
       if (response.statusCode == 200 && status == true) {
-        print('success');
-        var access_token = data['access_token'];
-        var refresh_token = data['refresh_token'];
+        var accessToken = data['access_token'];
+        var refreshToken = data['refresh_token'];
         var role = data['is_user'];
-        sessionDataProvider.setAccessToken(access_token);
+        sessionDataProvider.setAccessToken(accessToken);
         sessionDataProvider.setRole(role.toString());
 
-        sessionDataProvider.setRefreshToken(refresh_token);
+        sessionDataProvider.setRefreshToken(refreshToken);
         return data;
       } else {
-        print("failed");
         return {};
       }
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
     return {};
   }
@@ -154,18 +150,19 @@ class UserDataProvider {
       var body = jsonDecode(response.body);
       var status = body['status'];
       if (status == true) {
-        var access_token = body['access_token'];
-        var refresh_token = body['refresh_token'];
+        var accessToken = body['access_token'];
+        var refreshToken = body['refresh_token'];
         var role = body['role'];
-        sessionDataProvider.setAccessToken(access_token);
+        sessionDataProvider.setAccessToken(accessToken);
         sessionDataProvider.setRole(role);
-        sessionDataProvider.setRefreshToken(refresh_token);
+        sessionDataProvider.setRefreshToken(refreshToken);
         return true;
       } else {
         return false;
       }
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
     return false;
   }
@@ -181,9 +178,9 @@ class UserDataProvider {
           'Authorization': 'bearer $accessToken',
           'Contnet-type': "application/json",
         }, body: <String, dynamic>{
-          'refresh_token': '$refreshToken',
+          'refresh_token': refreshToken,
         });
-        ;
+
         var body = jsonDecode(response.body);
 
         if (response.statusCode == 200) {
@@ -192,12 +189,11 @@ class UserDataProvider {
           sessionDataProvider.setAccessToken(accessToken);
 
           return true;
-        } else if (isRefresh_Token_TimerActive) {
+        } else if (isRefreshTokenTimerActive) {
           sessionDataProvider.deleteAllToken();
           return false;
         }
       } catch (e) {
-        print(e);
         return false;
       }
     }
@@ -226,18 +222,18 @@ class UserDataProvider {
 
 
       if (status == true) {
-        print( User.fromJson(data).firstName);
      return User.fromJson(data);
       }
     } catch(e){
-print(e);
+      debugPrint('$e');
+
     }
   return null;
   }
 
   Future<Map> updateMyAccountFromApi({firstName, lastName, jobTitle,id}) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String? token = sharedPreferences.getString('token');
+    //SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    //String? token = sharedPreferences.getString('token');
 
     final requestBody = {};
 
@@ -258,7 +254,7 @@ print(e);
           Uri.parse(Api.updateUser(id)),
           headers: {HttpHeaders.authorizationHeader: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3BocGxhcmF2ZWwtODg1NDA4LTMwNjk0ODMuY2xvdWR3YXlzYXBwcy5jb20vYXBpL2xvZ2luIiwiaWF0IjoxNjcwMTc3NTMwLCJleHAiOjE2NzAzOTM1MzAsIm5iZiI6MTY3MDE3NzUzMCwianRpIjoiY0VEcWZtQVNacDB2UmVVWCIsInN1YiI6IjEiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3In0.v9qp9O7AodhCmfpV9KwFXvDVVKLQiT63VIGYA_rO_eI"},
           body: requestBody
-      ).timeout(Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 10));
 
       return jsonDecode(response.body);
     } on TimeoutException catch (_) {
@@ -299,11 +295,9 @@ print(e);
 
           return user;
         } else {
-          print("failed");
           return dialects;
         }
       } catch (e) {
-        print(e);
         throw Exception(e);
       }
     }
@@ -332,11 +326,9 @@ print(e);
 
         return user;
       } else {
-        print("failed");
         return dialects;
       }
     } catch (e) {
-      print(e);
       throw Exception(e);
     }
   }
@@ -356,11 +348,9 @@ print(e);
 
         return user;
       } else {
-        print("failed");
         return dialects;
       }
     } catch (e) {
-      print(e);
       throw Exception(e);
     }
   }
@@ -389,11 +379,11 @@ print(e);
           return  User.fromJson(data);
 
         } else {
-          print("failed");
           return users;
         }
       } catch (e) {
-        print(e);
+        debugPrint('$e');
+
       }
       return users;
     }
@@ -410,11 +400,9 @@ print(e);
       if (success == true) {
         return true;
       } else {
-        print("failed");
         return false;
       }
     } catch (e) {
-      print(e);
       throw Exception(e);
     }
   }

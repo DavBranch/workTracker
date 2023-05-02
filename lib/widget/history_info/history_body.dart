@@ -2,9 +2,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 
 
 // widgets
@@ -14,7 +12,7 @@ class HistorySheetContainerBody extends StatefulWidget {
   final String date;
   final String startTime;
   final String endTime;
-  final String currentLocation;
+  final String? currentLocation;
   final String endLocation;
   final String startLocation;
   final bool? isInfo;
@@ -28,22 +26,17 @@ class HistorySheetContainerBody extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _HistorySheetContainerBodyState createState() => _HistorySheetContainerBodyState();
+  HistorySheetContainerBodyState createState() => HistorySheetContainerBodyState();
 }
 
-class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
-  TextEditingController _firstNameController = TextEditingController();
+class HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
+  final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
-  TextEditingController _jobTitleController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _jobTitleController = TextEditingController();
 
 
-  Completer<GoogleMapController> _controller = Completer();
-  Location _location = Location();
-  bool _nameFocused = false;
-  bool _lastNameFocused = false;
-  bool _jobTitleFocused = false;
-  bool _passwrodFocused = false;
+  final Completer<GoogleMapController> _controller = Completer();
+
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(40.4018, 44.6434),
     zoom: 15,
@@ -101,7 +94,7 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                   ),
                 ),
                  const SizedBox(height: 3),
-                 Text(widget.status ?? '',
+                 Text(widget.status,
                   style: const TextStyle(
                     fontFamily: 'Roboto',
                     decoration: TextDecoration.none,
@@ -128,7 +121,7 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text(widget.date ?? '',
+                  Text(widget.date,
                     style:const TextStyle(
                       fontFamily: 'Roboto',
                       decoration: TextDecoration.none,
@@ -142,7 +135,7 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                 ],),
             ],),
             // first name input
-            SizedBox(height: 20,),
+            const SizedBox(height: 20,),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -160,7 +153,7 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.startTime ?? '',
+                    Text(widget.startTime,
                       style: const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
@@ -187,7 +180,7 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.endTime ?? '',
+                    Text(widget.endTime,
                       style: const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
@@ -219,8 +212,8 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.startTime ?? '',
-                      style: TextStyle(
+                    Text(widget.startTime,
+                      style: const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
                         fontWeight: FontWeight.w400,
@@ -246,7 +239,7 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.endTime ?? '',
+                    Text(widget.endTime,
                       style:const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
@@ -276,7 +269,7 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
                 color: Color(0xFF212121),
               ),
             ),
-            if(widget?.currentLocation !=null)
+            if(widget.currentLocation !=null)
               SizedBox(
                 height: 400,
                 width: MediaQuery.of(context).size.width,
@@ -296,8 +289,8 @@ class _HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
 
                 ),),
 
-            SizedBox(height: 10
-            ),SizedBox(height: 30,)
+            const SizedBox(height: 10
+            ),const SizedBox(height: 30,)
           ],
         ),
       ),

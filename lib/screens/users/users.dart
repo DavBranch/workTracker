@@ -1,10 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:worktracker/screens/history/history_screen.dart';
 import 'package:worktracker/screens/home_screen_form/admin_form.dart';
 
-import '../../services/models/user.dart';
 import '../../widget/users_card_form.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
 import '../Login/login_screen.dart';
@@ -55,7 +52,7 @@ class _UsersScreenState extends State<UsersScreen> {
                       _sessionDataProvider.deleteAllToken();
 
                       Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
-                          LoginScreen()), (Route<dynamic> route) => false);                    },
+                          const LoginScreen()), (Route<dynamic> route) => false);                    },
                     child: const Text('Logout'))),
 
 

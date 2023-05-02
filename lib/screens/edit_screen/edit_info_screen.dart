@@ -11,14 +11,14 @@ import '../../widget/edit_info/sheet_container_body.dart';
 
 class EditMyInfoBottomSheetModal extends StatefulWidget {
   final BuildContext context;
-   String firstName;
-   String lastName;
-   String userName;
-   String password;
+  final String firstName;
+  final String lastName;
+  final String userName;
+  final String password;
   final bool? isInfo;
   final int id;
 
-   EditMyInfoBottomSheetModal({
+   const EditMyInfoBottomSheetModal({
     Key? key,
     required this.id,
     this.isInfo,
@@ -30,15 +30,15 @@ class EditMyInfoBottomSheetModal extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _EditMyInfoBottomSheetModalState createState() =>  _EditMyInfoBottomSheetModalState();
+  EditMyInfoBottomSheetModalState createState() =>  EditMyInfoBottomSheetModalState();
 }
 
-class _EditMyInfoBottomSheetModalState extends State<EditMyInfoBottomSheetModal> {
+class EditMyInfoBottomSheetModalState extends State<EditMyInfoBottomSheetModal> {
   late UsersBloc _myAccountBloc;
 
   String? _firstName;
   String? _userName;
-  int? _id;
+  //int? _id;
   String? _lastName;
   final updateUser = GlobalKey<ScaffoldState>();
 
@@ -85,7 +85,7 @@ class _EditMyInfoBottomSheetModalState extends State<EditMyInfoBottomSheetModal>
             Container(
               child: state.updateMyAccountInProgress??false ? Container(
                 color: Colors.white.withOpacity(0.9),
-                child: Align(
+                child: const Align(
                   alignment: Alignment.center,
                   child: CircularProgressIndicator(),
                 ),

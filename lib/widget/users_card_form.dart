@@ -3,14 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:worktracker/screens/info_screen/info_screen.dart';
 import 'package:worktracker/services/data_provider/user_data_provider.dart';
-import 'package:worktracker/utils/user_preferences.dart';
 import 'package:worktracker/widget/user_info/info_section.dart';
 
-import '../page/edit_profile_page.dart';
 import '../screens/edit_screen/edit_info_screen.dart';
 import '../services/blocs/user/user_bloc.dart';
-import '../services/blocs/user/user_event.dart';
-import '../services/blocs/user/user_state.dart';
 import '../services/models/user.dart';
 
 
@@ -40,7 +36,7 @@ class _DashboardDataState extends State<DashboardData> {
     FocusScope.of(context).requestFocus(FocusNode());
     showModalBottomSheet(
       isDismissible: true,
-      barrierColor: Color(0xFFF5F6F6).withOpacity(0.7),
+      barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
       elevation: 3,
       useRootNavigator: true,
       isScrollControlled: true,
@@ -49,7 +45,7 @@ class _DashboardDataState extends State<DashboardData> {
       builder: (_) => BlocProvider.value(
         value: BlocProvider.of<UsersBloc>(context),
         child: InfoScreenSheetModal(
-          id: user?.id,
+          id: user.id,
           user: user,
           context: context,
         ),
@@ -60,9 +56,14 @@ class _DashboardDataState extends State<DashboardData> {
 void _onDelete({required List<User> users,required int index,required int userId})async{
     users.removeAt(index);
  bool isDelete = await _userDataProvider.deleteUser(userId);
-  if(isDelete)ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text("User Deleted!"),
-  ));;
+  if(isDelete) {
+    if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("User Deleted!"),
+      ));
+    }
+
+  }
  setState((){});
 }
   void _openEditMyInfoBottomSheetModal(
@@ -70,7 +71,7 @@ void _onDelete({required List<User> users,required int index,required int userId
     FocusScope.of(context).requestFocus(FocusNode());
     showModalBottomSheet(
       isDismissible: true,
-      barrierColor: Color(0xFFF5F6F6).withOpacity(0.7),
+      barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
       elevation: 3,
       useRootNavigator: true,
       isScrollControlled: true,

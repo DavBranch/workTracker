@@ -1,18 +1,14 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
-import 'package:worktracker/main.dart';
 import 'package:worktracker/screens/Login/login_screen.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
 import 'package:worktracker/services/data_provider/users_info_api.dart';
 import 'package:worktracker/services/models/user_actions.dart';
 
-import '../../utils/notification_service.dart';
 class UserScreen extends StatefulWidget {
   const  UserScreen({Key? key}) : super(key: key);
 
@@ -24,20 +20,16 @@ class _UserScreenState extends State<UserScreen> {
   final UserActionsProvider _userActionsProvider = UserActionsProvider();
   final _isHours = true;
   final  _sessionDataProvider =  SessionDataProvider();
-  bool _backgroundTaskIsOff = false;
   late  String stopedTimerData ='';
    bool serviceEnabled = false;
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(
     mode: StopWatchMode.countUp,
     //onChange: (value) => print('onChange $value'),
     onStopped: () {
-      print('onStop');
     },
     onEnded: () {
-      print('onEnded');
     },
   );
-  String? _currentAddress;
   Position? _currentPosition;
 
   Future<void> _getCurrentPosition()async {
@@ -59,24 +51,33 @@ class _UserScreenState extends State<UserScreen> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location services are disabled. Please enable the services')));
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Location services are disabled. Please enable the services')));
+      }
+
       return false;
     }
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are denied')));
+        if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')));
+        }
+
         return false;
       }
     }
     if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      if(context.mounted){
+
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text(
-              'Location permissions are permanently denied, we cannot request permissions.')));
+              'Location permissions are permanently denied, we cannot request permissions.')));}
+
       return false;
     }
     return true;
@@ -146,7 +147,7 @@ class _UserScreenState extends State<UserScreen> {
                       _sessionDataProvider.deleteAllToken();
 
                       Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
-                          LoginScreen()), (Route<dynamic> route) => false);                    },
+                          const LoginScreen()), (Route<dynamic> route) => false);                    },
                     child: const Text('Logout'))),
 
 
@@ -175,7 +176,6 @@ class _UserScreenState extends State<UserScreen> {
 
                   onPressed: ()async{
                    await _getCurrentPosition();
-                  // MyAppState().startForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
                    if(serviceEnabled){
                       _saveData();
                       _stopWatchTimer.onStartTimer();
@@ -200,7 +200,6 @@ class _UserScreenState extends State<UserScreen> {
 
                   onPressed: ()async{
                     _stopWatchTimer.onStopTimer();
-                    //MyAppState().stopForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
                     UserLocation  location = UserLocation(lat: _currentPosition?.latitude.toString(), lng: _currentPosition?.longitude.toString(), );
                     await  _getCurrentPosition();
                     if( !_stopWatchTimer.isRunning ){

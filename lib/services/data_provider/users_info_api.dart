@@ -1,19 +1,15 @@
 import 'dart:convert';
-import 'dart:developer';
-import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
-import 'package:worktracker/services/models/user.dart';
 import 'package:worktracker/services/models/user_info.dart';
 
 import '../../base_data/base_api.dart';
 import '../models/user_actions.dart';
-import '../../services/data_provider/user_data_provider.dart';
 class UserActionsProvider {
   final sessionDataProvider = SessionDataProvider();
-  final _userdataProvider = UserDataProvider();
+  //final _userdataProvider = UserDataProvider();
   Future<bool?> fetchUserActions(UserActions userActions)async{
     final accessToken = await sessionDataProvider.readsAccessToken();
     Map<String,dynamic> userData = {
@@ -24,7 +20,6 @@ class UserActionsProvider {
         "lng":"${userActions.location?.lng}"
       }
     };
-     print(json.encode(userData.toString()));
 
 
     try {
@@ -38,14 +33,13 @@ class UserActionsProvider {
       );
 
       if (response.statusCode == 200) {
-        print('obodybject');
         return true;
       } else {
-        print("failed");
         return false;
       }
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
     return false;
 
@@ -55,7 +49,7 @@ class UserActionsProvider {
     Map userData = {
       'location': location,
     };
-    var refTk = sessionDataProvider.readRefreshToken();
+    //var refTk = sessionDataProvider.readRefreshToken();
 
     try {
       var response = await http.post(
@@ -67,18 +61,17 @@ class UserActionsProvider {
         body: json.encode(userData),
       );
       var body = jsonDecode(response.body);
-      var token = body['access_token'];
-      print(token);
+      //var token = body['access_token'];
       // sessionDataProvider.deleteAllToken();
       if (response.statusCode == 200) {
-
+        debugPrint('$body');
         return true;
       } else {
-        print("failed");
         return false;
       }
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
     return false;
 
@@ -93,7 +86,6 @@ class UserActionsProvider {
     );
 
     try {
-      print('Fetching from the network');
       var body = json.decode(response.body);
 
       var success = body['success'];
@@ -102,17 +94,17 @@ class UserActionsProvider {
 
         return UserInfo.fromJson(content);
       } else {
-        print("failed");
         return users;
       }
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
     return users;
   }
   Future<void> logout()async{
     sessionDataProvider.deleteAllToken();
-    var response = await http.post(
+   await http.post(
       Uri.parse(Api.logout),
       headers: <String, String>{
         'Content-Type': 'application/json',

@@ -4,11 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:worktracker/screens/users/users.dart';
 import 'package:worktracker/services/blocs/user/user_event.dart';
 import 'package:worktracker/services/blocs/user/user_state.dart';
-import 'package:worktracker/utils/user_preferences.dart';
-import 'package:worktracker/services/blocs/user/user_event.dart';
-import 'package:worktracker/services/blocs/user/user_state.dart';
-
-import '../../../screens/users/users.dart';
 import '../../data_provider/user_data_provider.dart';
 import '../../models/user.dart';
 
@@ -34,9 +29,9 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
   Stream<EditUserState> _mapFetchMyAccountToState(FetchMyAccount event) async* {
     yield MyAccountLoading();
 
-    final List<User> myAccountData = await _myAccountRepository.getUser() ;
+    final  myAccountData = await _myAccountRepository.getUser() ;
     final users =myAccountData;
-    if (users != null) {
+    if (users.isNotEmpty) {
       yield MyAccountLoaded(
       listUsers: users,
       );
@@ -88,7 +83,7 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
     //   } else {
     //     // Navigator.pop(event.context);
     //   }
-      if (event.firstName != null || event.lastName != null || event.userName != null) {
+      if (event.firstName.isNotEmpty || event.lastName.isNotEmpty || event.userName.isNotEmpty) {
         final currentState = state;
 
         if (currentState is MyAccountLoaded) {
@@ -105,22 +100,22 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
         if (myAccountData['errors'] == null) {
           final User myAccountData = await _myAccountRepository.getUserById(2.toString());
 
-          if (myAccountData != null) {
-            if (currentState is MyAccountLoaded) {
-              yield currentState.copyWith(
-                  listUsers: [myAccountData],
-              );
-            }
+          if (currentState is MyAccountLoaded) {
+            yield currentState.copyWith(
+                listUsers: [myAccountData],
+            );
+          }
 
-            try{
-              Navigator.of(event.context!).pushAndRemoveUntil(
+          try{
+            Navigator.of(event.context!).pushAndRemoveUntil(
 
-                  MaterialPageRoute(
-                      builder: (context) =>
-                      const UsersScreen()),
-                      (Route<dynamic> route) =>
-                  false);
-            } catch(e) {}
+                MaterialPageRoute(
+                    builder: (context) =>
+                    const UsersScreen()),
+                    (Route<dynamic> route) =>
+                false);
+          } catch(e) {
+            debugPrint('$e');
           }
         } else {
           Navigator.pop(event.context!);

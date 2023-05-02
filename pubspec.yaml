@@ -67,13 +67,16 @@ dependencies:
   #flutter_native_timezone: ^2.0.0
   flutter_foreground_task: ^3.10.0
   intl: ^0.18.0
+  flutter_native_splash: ^2.2.12
+  bloc: ^7.2.1
+  meta: ^1.8.0
+
   #background_location: ^0.8.1
 
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_native_splash: ^2.2.12
 flutter_native_splash:
   background_image: "assets/images.jpeg"
   image: assets/timer_logo.png

@@ -61,9 +61,9 @@ class UserInfo {
       );
 
   factory UserInfo.fromJson(Map<String, dynamic> json) => UserInfo(
-    id: json["id"] == null ? null : json["id"],
-    userId: json["user_id"] == null ? null : json["user_id"],
-    status: json["status"] == null ? null : json["status"],
+    id: json["id"],
+    userId: json["user_id"],
+    status: json["status"],
     date: json["date"] == null ? null : DateTime.parse(json["date"]),
     startTime: json["start_time"] == null ? null : DateTime.parse(json["start_time"]),
     endTime:  json["end_time"] == null ? null : DateTime.parse(json["end_time"]),
@@ -96,8 +96,8 @@ class InfoLocation {
 
   factory InfoLocation.fromJson(Map<String, dynamic> json) =>
       InfoLocation(
-        lat: json["lat"] == null ? null : json["lat"],
-        lng: json["lng"] == null ? null : json["lng"],
+        lat: json["lat"],
+        lng: json["lng"],
       );
 
 

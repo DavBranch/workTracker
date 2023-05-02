@@ -17,7 +17,7 @@ class SignupForm extends StatelessWidget {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
             ..showSnackBar(
-              SnackBar(content: Text('User Added')),
+              const SnackBar(content: Text('User Added')),
             );
         } else if (state.status.isSubmissionFailure) {
           ScaffoldMessenger.of(context)
@@ -33,7 +33,7 @@ class SignupForm extends StatelessWidget {
           child: Column(
             children: [
              const  Padding(
-                    padding: const EdgeInsets.only(top: 20),
+                    padding:  EdgeInsets.only(top: 20),
                     child: Center(child: Text('Add User',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize: 22),),),
                   ),
 
@@ -309,7 +309,6 @@ class _DropRolButtonState extends State<DropRolButton> {
 
         setState(() {
           dropdownvalue = newValue!;
-          print(dropdownvalue);
           context.read<RegisterCubit>().roleChanged(dropdownvalue.toLowerCase());
 
 
