@@ -1,4 +1,4 @@
-const String baseUrl = 'https://phplaravel-885408-3069483.cloudwaysapps.com';
+const String baseUrl = 'http://165.227.204.177';
 const apiUrl = '$baseUrl/api';
 
 
@@ -24,12 +24,5 @@ class Api {
       //Info users
       static String allInfo(String? dateTime)=>  '$apiUrl/info?date=$dateTime';
       static String  getInfo(String id) => '$apiUrl/info/$id';
-
-
-
-
-
-
-
 
 }

@@ -64,19 +64,7 @@ class UserDataProvider {
     return isSuscces;
   }
 
-  //Login
-  // LoginFuture<Map<String,dynamic>> logInWithEmailAndPassword({
-  //   required String userName,
-  //   required String password,
-  // }) async {
-  //   try {
-  //    return
-  //     await signInWithEmailAndPassword(userName: userName, password: password);
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  //   return {};
-  // }
+
 
   //Log out
   Future<void> logOut() async {
@@ -115,7 +103,6 @@ class UserDataProvider {
         var role = data['is_user'];
         sessionDataProvider.setAccessToken(accessToken);
         sessionDataProvider.setRole(role.toString());
-
         sessionDataProvider.setRefreshToken(refreshToken);
         return data;
       } else {
@@ -169,72 +156,65 @@ class UserDataProvider {
 
 
 
-  Future<bool> refreshToken() async {
+  Future<bool> refresh() async {
     final refreshToken = await sessionDataProvider.readRefreshToken();
     final accessToken = await sessionDataProvider.readsAccessToken();
     if (refreshToken != null) {
       try {
-        final response = await http.post(Uri.parse(Api.refresh), headers: {
-          'Authorization': 'bearer $accessToken',
-          'Contnet-type': "application/json",
-        }, body: <String, dynamic>{
-          'refresh_token': refreshToken,
-        });
-
-        var body = jsonDecode(response.body);
+        final client = http.Client();
+        final response = await client.post(Uri.parse(Api.refresh),
+            headers: {
+              'Authorization': 'bearer $accessToken',
+              'Content-Type': "application/json",
+            },
+            body: <String, dynamic>{'refresh_token': refreshToken}).timeout(const Duration(seconds: 30));
 
         if (response.statusCode == 200) {
-          var accessToken = body['access_token'];
-
-          sessionDataProvider.setAccessToken(accessToken);
-
+          var body = jsonDecode(response.body);
+          var newAccessToken = body['access_token'];
+          if (newAccessToken == null) {
+            // Invalid response, handle error
+            debugPrint('Invalid response body: $body');
+            return false;
+          }
+          sessionDataProvider.setAccessToken(newAccessToken);
           return true;
-        } else if (isRefreshTokenTimerActive) {
-          sessionDataProvider.deleteAllToken();
+        } else if (response.statusCode == 401) {
+          // Unauthorized, token expired or invalid
+          var body = jsonDecode(response.body);
+          if (body['error'] == 'invalid_grant') {
+            // Refresh token expired or invalid, prompt user to log in again
+            sessionDataProvider.deleteAllToken();
+          } else {
+            // Access token expired or invalid, refresh token still valid, try again
+            await Future.delayed(const Duration(seconds: 5)); // Wait for 5 seconds before retrying
+            return await refresh();
+          }
+        } else {
+          // Other error, handle appropriately
+          debugPrint('Request failed with status code: ${response.statusCode}');
           return false;
         }
       } catch (e) {
+        // Network or server error, handle appropriately
+        debugPrint('Request failed: $e');
         return false;
       }
     }
     return false;
   }
-  Future<User?> updateUser({firstName,lastName, userName,id}) async {
-    final accessToken = await sessionDataProvider.readsAccessToken();
-
-    Map userData = {
-      'location': firstName,
-
-    };
-
-    try {
-      final response = await http.post(Uri.parse(Api.updateUser(id)),
-          headers: {
-        'Contnet-type': "application/json",
-        'Authorization': 'Bearer $accessToken'
-      }, body:
-        jsonEncode(userData)
-      );
-
-      var body = jsonDecode(response.body);
-      var data = body['data'];
-      var status = body['status'];
-
-
-      if (status == true) {
-     return User.fromJson(data);
-      }
-    } catch(e){
-      debugPrint('$e');
-
-    }
-  return null;
-  }
 
   Future<Map> updateMyAccountFromApi({firstName, lastName, jobTitle,id}) async {
-    //SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    //String? token = sharedPreferences.getString('token');
+    var token = await sessionDataProvider.readsAccessToken();
 
+    if (token == null) {
+      // Access token is not available, cannot make the request
+      return {
+        'errors': {
+          'network': 'Access token not available'
+        }
+      };
+    }
     final requestBody = {};
 
     if (firstName != null && firstName != '') {
@@ -248,19 +228,50 @@ class UserDataProvider {
     if (jobTitle != null) {
       requestBody["username"] = jobTitle;
     }
-     requestBody['location'] = {'lat':'93095659','long':'374'};
     try {
+      final client = http.Client();
       final response = await client.post(
           Uri.parse(Api.updateUser(id)),
-          headers: {HttpHeaders.authorizationHeader: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3BocGxhcmF2ZWwtODg1NDA4LTMwNjk0ODMuY2xvdWR3YXlzYXBwcy5jb20vYXBpL2xvZ2luIiwiaWF0IjoxNjcwMTc3NTMwLCJleHAiOjE2NzAzOTM1MzAsIm5iZiI6MTY3MDE3NzUzMCwianRpIjoiY0VEcWZtQVNacDB2UmVVWCIsInN1YiI6IjEiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3In0.v9qp9O7AodhCmfpV9KwFXvDVVKLQiT63VIGYA_rO_eI"},
+          headers: {HttpHeaders.authorizationHeader: "Bearer $token"},
           body: requestBody
       ).timeout(const Duration(seconds: 10));
 
-      return jsonDecode(response.body);
+      if (response.statusCode == 401) {
+        // Unauthorized, token expired or invalid
+        final refreshed = await refresh();
+        if (refreshed) {
+          // Token refreshed successfully, retry the request
+          return await updateMyAccountFromApi(
+              firstName: firstName,
+              lastName: lastName,
+              jobTitle: jobTitle,
+              id: id
+          );
+        } else {
+          // Token refresh failed, prompt user to log in again
+          sessionDataProvider.deleteAllToken();
+          return {
+            'errors': {
+              'network': 'Access token expired or invalid, please log in again'
+            }
+          };
+        }
+      } else if (response.statusCode == 200) {
+        // Request successful, return response body
+        return jsonDecode(response.body);
+      } else {
+        // Other error, handle appropriately
+        debugPrint('Request failed with status code: ${response.statusCode}');
+        return {
+          'errors': {
+            'network': 'Something went wrong'
+          }
+        };
+      }
     } on TimeoutException catch (_) {
       return {
         'errors': {
-          'network': 'Something went wrong'
+          'network': 'Request timed out, please try again'
         }
       };
     } on Error catch (_) {
@@ -276,9 +287,9 @@ class UserDataProvider {
         }
       };
     }
-
   }
-    Future<List<User>> getUser() async {
+
+  Future<List<User>> getUser() async {
       var dialects = <User>[];
       try {
         var response = await http.get(
@@ -355,12 +366,14 @@ class UserDataProvider {
     }
   }
     Future<User> getUserById(String userId) async {
+      var token = await sessionDataProvider.readsAccessToken();
+
       var users = User();
       var response = await http.get(
         Uri.parse(Api.getUser(userId)),
         headers: <String, String>{
           'Content-Type': 'application/json',
-         HttpHeaders.authorizationHeader: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3BocGxhcmF2ZWwtODg1NDA4LTMwNjk0ODMuY2xvdWR3YXlzYXBwcy5jb20vYXBpL2xvZ2luIiwiaWF0IjoxNjcwMTc3NTMwLCJleHAiOjE2NzAzOTM1MzAsIm5iZiI6MTY3MDE3NzUzMCwianRpIjoiY0VEcWZtQVNacDB2UmVVWCIsInN1YiI6IjEiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3In0.v9qp9O7AodhCmfpV9KwFXvDVVKLQiT63VIGYA_rO_eI",
+         HttpHeaders.authorizationHeader: "Bearer $token",
 
 
         },
@@ -378,7 +391,15 @@ class UserDataProvider {
 
           return  User.fromJson(data);
 
-        } else {
+        }else if (isAccesTokenTimerActive || response.statusCode == 401) {
+          bool isTrue = await refresh();
+
+          if (isTrue) {
+            return await getUserById(userId); // Call saveFavorite recursively after refreshing token
+          } else {
+            return users;
+          }
+        }  else {
           return users;
         }
       } catch (e) {
@@ -399,7 +420,16 @@ class UserDataProvider {
       var success = body['status'];
       if (success == true) {
         return true;
-      } else {
+      } else if (isAccesTokenTimerActive || response.statusCode == 401) {
+        bool isTrue = await refresh();
+
+        if (isTrue) {
+          return await deleteUser(id); // Call saveFavorite recursively after refreshing token
+        } else {
+          return false;
+        }
+      }else {
+        debugPrint('Delete $success');
         return false;
       }
     } catch (e) {

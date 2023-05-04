@@ -49,19 +49,20 @@ class MyTaskHandler extends TaskHandler {
   SendPort? _sendPort;
 
   Future<void> updateLocation(UserLocation location)async{
+    var token = await sessionDataProvider.readsAccessToken();
+    final userdataProvider = UserDataProvider();
+
     Map userData = {"location": {
     "lat":"${location.lat}",
     "lng":"${location.lng}"
     }};
-    debugPrint('Debug : cicik');
-    //var refTk = sessionDataProvider.readRefreshToken();
-    var accTk = await sessionDataProvider.readsAccessToken();
+
     try {
       var response = await http.post(
         Uri.parse(Api.updateLocation),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization':'Bearer $accTk'
+          'Authorization':'Bearer $token'
         },
         body: json.encode(userData),
       );
@@ -71,6 +72,14 @@ class MyTaskHandler extends TaskHandler {
    debugPrint('Davs davay mernem qezz ${location.lat}    ');
  }
 
+      } else if (response.statusCode == 401) {
+        bool isTrue = await userdataProvider.refresh();
+
+        if (isTrue) {
+          return await updateLocation(location); // Call saveFavorite recursively after refreshing token
+        } else {
+          debugPrint("false");
+        }
       } else {
         debugPrint("failed");
 
