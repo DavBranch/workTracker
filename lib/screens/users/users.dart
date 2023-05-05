@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:worktracker/screens/history/history_screen.dart';
+import 'package:worktracker/screens/history/info_page.dart';
 import 'package:worktracker/screens/home_screen_form/admin_form.dart';
 
 import '../../widget/users_card_form.dart';
@@ -44,7 +45,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 PopupMenuItem<int>(value: 1, child: GestureDetector(
                     onTap: (){
                       Navigator.of(context).pop();
-                      Navigator.of(context).push(MaterialPageRoute(builder: (_)=>const HistoryScreen(),));
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_)=> MyPage(),));
                     },
                     child: const Text('History'))),
                 PopupMenuItem<int>(value: 2, child: GestureDetector(

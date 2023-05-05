@@ -8,6 +8,7 @@ import 'package:http/http.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
 
 import '../../base_data/base_api.dart';
+import '../models/info.dart';
 import '../models/user.dart';
 import '../models/user_info.dart';
 
@@ -434,6 +435,18 @@ class UserDataProvider {
       }
     } catch (e) {
       throw Exception(e);
+    }
+  }
+  Future<InfoUser?> fetchInfoUser(http.Client client) async {
+    final response =
+    await client.get(Uri.https('165.227.204.177', '/api/info'));
+
+    if (response.statusCode == 200) {
+      // If the call to the server was successful, parse the JSON
+      return InfoUser.fromJson(json.decode(response.body));
+    } else {
+      // If that call was not successful, throw an error.
+      throw Exception('Failed to load InfoUser');
     }
   }
   }
