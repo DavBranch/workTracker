@@ -67,9 +67,8 @@ class MyTaskHandler extends TaskHandler {
         body: json.encode(userData),
       );
       if (response.statusCode == 200) {
-
  if (kDebugMode) {
-   debugPrint('Davs davay mernem qezz ${location.lat}    ');
+   debugPrint('Davs davay mernem qezz ');
  }
 
       } else if (response.statusCode == 401) {
@@ -243,7 +242,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         playSound: true,
       ),
       foregroundTaskOptions: const ForegroundTaskOptions(
-        interval: 300000,
+        interval: 60000,
         isOnceEvent: false,
         autoRunOnBoot: true,
         allowWakeLock: true,
@@ -307,6 +306,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
           debugPrint('eventCount: $message');
         } else if (message is String) {
           if (message == 'onNotificationPressed') {
+
             Navigator.of(context,rootNavigator: true).push(MaterialPageRoute(builder: (_)=>const UserScreen()));
           }
         } else if (message is DateTime) {

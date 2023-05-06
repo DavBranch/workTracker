@@ -70,6 +70,7 @@ dependencies:
   flutter_native_splash: ^2.2.12
   bloc: ^7.2.1
   meta: ^1.8.0
+  permission_handler: ^10.2.0
 
   #background_location: ^0.8.1
 

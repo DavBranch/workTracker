@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
@@ -8,6 +9,8 @@ import 'package:worktracker/screens/Login/login_screen.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
 import 'package:worktracker/services/data_provider/users_info_api.dart';
 import 'package:worktracker/services/models/user_actions.dart';
+
+import '../../main.dart';
 
 class UserScreen extends StatefulWidget {
   const  UserScreen({Key? key}) : super(key: key);
@@ -20,6 +23,7 @@ class _UserScreenState extends State<UserScreen> {
   final UserActionsProvider _userActionsProvider = UserActionsProvider();
   final _isHours = true;
   final  _sessionDataProvider =  SessionDataProvider();
+  bool _backgroundTaskIsOff = false;
   late  String stopedTimerData ='';
    bool serviceEnabled = false;
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(
@@ -32,18 +36,68 @@ class _UserScreenState extends State<UserScreen> {
   );
   Position? _currentPosition;
 
-  Future<void> _getCurrentPosition()async {
-    final hasPermission = await _handleLocationPermission();
-
-    if (!hasPermission) return;
-    await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
-        .then((Position position) {
-      setState(() => _currentPosition = position);
-    }).catchError((e) {
-      debugPrint(e);
-    });
+  // Future<void> _getCurrentPosition()async {
+  //   final hasPermission = await _handleLocationPermission();
+  //
+  //   if (!hasPermission) return;
+  //   await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
+  //       .then((Position position) {
+  //     setState(() => _currentPosition = position);
+  //   }).catchError((e) {
+  //     debugPrint(e);
+  //   });
+  // }
+  Future<void> _getCurrentPosition() async {
+    // Check if location permission is granted and request permission if necessary
+    if (await Permission.location.request().isGranted) {
+      // permission is granted, get the location
+      try {
+        final GeolocatorPlatform geolocator = GeolocatorPlatform.instance;
+        final Position position = await geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+        setState(() {
+          _currentPosition = position;
+        });
+      } catch (error) {
+        print(error);
+      }
+    } else {
+      // permission is not granted, request it
+      await Permission.location.request();
+      // check again if permission is granted or not
+      if (await Permission.location.request().isGranted) {
+        // permission is granted, get the location
+        try {
+          final GeolocatorPlatform geolocator = GeolocatorPlatform.instance;
+          final Position position = await geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+          setState(() {
+            _currentPosition = position;
+          });
+        } catch (error) {
+          print(error);
+        }
+      } else {
+        // permission is denied or permanently denied, show an alert or dialog
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: Text('Location Permission'),
+            content: Text('Please enable location services all the time'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('CANCEL'),
+              ),
+              TextButton(
+                onPressed: () => openAppSettings(),
+                child: Text('SETTINGS'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
-
 
   Future<bool> _handleLocationPermission() async{
 
@@ -174,9 +228,11 @@ class _UserScreenState extends State<UserScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue ),
 
-                  onPressed: ()async{
-                   await _getCurrentPosition();
+                  onPressed: (){
+                    _getCurrentPosition();
+
                    if(serviceEnabled){
+                     MyAppState().startForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
                       _saveData();
                       _stopWatchTimer.onStartTimer();
                       if(_currentPosition != null && _stopWatchTimer.isRunning){
@@ -200,6 +256,7 @@ class _UserScreenState extends State<UserScreen> {
 
                   onPressed: ()async{
                     _stopWatchTimer.onStopTimer();
+                    MyAppState().stopForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
                     UserLocation  location = UserLocation(lat: _currentPosition?.latitude.toString(), lng: _currentPosition?.longitude.toString(), );
                     await  _getCurrentPosition();
                     if( !_stopWatchTimer.isRunning ){

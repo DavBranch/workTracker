@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
+import 'package:worktracker/services/data_provider/user_data_provider.dart';
 import 'package:worktracker/services/models/user_info.dart';
 
 import '../../base_data/base_api.dart';
 import '../models/user_actions.dart';
 class UserActionsProvider {
   final sessionDataProvider = SessionDataProvider();
-  //final _userdataProvider = UserDataProvider();
+  final _userdataProvider = UserDataProvider();
   Future<bool?> fetchUserActions(UserActions userActions)async{
     final accessToken = await sessionDataProvider.readsAccessToken();
     Map<String,dynamic> userData = {
@@ -24,7 +25,7 @@ class UserActionsProvider {
 
     try {
       var response = await http.post(
-        Uri.parse("https://phplaravel-885408-3069483.cloudwaysapps.com/api/action"),
+        Uri.parse(Api.startAndEndActions),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization':'Bearer $accessToken'
@@ -34,9 +35,18 @@ class UserActionsProvider {
 
       if (response.statusCode == 200) {
         return true;
-      } else {
+      } else if ( response.statusCode == 401) {
+        bool isTrue = await _userdataProvider.refresh();
+
+        if (isTrue) {
+          return await fetchUserActions(userActions); // Call saveFavorite recursively after refreshing token
+        } else {
+          return false;
+        }
+      }  else {
         return false;
       }
+
     } catch (e) {
       debugPrint('$e');
 
@@ -66,7 +76,15 @@ class UserActionsProvider {
       if (response.statusCode == 200) {
         debugPrint('$body');
         return true;
-      } else {
+      }  else if ( response.statusCode == 401) {
+        bool isTrue = await _userdataProvider.refresh();
+
+        if (isTrue) {
+          return await updateLocation(location); // Call saveFavorite recursively after refreshing token
+        } else {
+          return false;
+        }
+      }  else {
         return false;
       }
     } catch (e) {
