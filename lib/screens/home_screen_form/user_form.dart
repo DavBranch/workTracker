@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -81,16 +83,16 @@ class _UserScreenState extends State<UserScreen> {
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
-            title: Text('Location Permission'),
-            content: Text('Please enable location services all the time'),
+            title: const Text('Location Permission'),
+            content: const Text('Please enable location services all the time'),
             actions: <Widget>[
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('CANCEL'),
+                child: const Text('CANCEL'),
               ),
               TextButton(
                 onPressed: () => openAppSettings(),
-                child: Text('SETTINGS'),
+                child: const Text('SETTINGS'),
               ),
             ],
           ),
@@ -156,28 +158,24 @@ class _UserScreenState extends State<UserScreen> {
     );
     super.initState();
   }
-   _loadData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String savedWorkTime = prefs.getString("work_time") ?? "";
-    if(savedWorkTime.isNotEmpty){
-      var parsedWorkTime= DateTime.parse(savedWorkTime);
-      DateTime dateNow = DateTime.now();
-      int difference = parsedWorkTime.difference(dateNow).inMilliseconds;
-
+  _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedWorkTime = prefs.getString('work_time') ?? '';
+    if (savedWorkTime.isNotEmpty) {
+      final parsedWorkTime = DateTime.parse(savedWorkTime);
+      final dateNow = DateTime.now();
+      final difference = parsedWorkTime.difference(dateNow).inMilliseconds;
       _stopWatchTimer.setPresetTime(mSec: difference.abs());
       _stopWatchTimer.onStartTimer();
     }
-   
-
   }
-  _removeData()async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove("work_time");
-
+  _removeData() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove('work_time');
   }
   _saveData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString("work_time", DateTime.now().toString());
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('work_time', DateTime.now().toString());
   }
   @override
   void dispose() async {
@@ -186,7 +184,7 @@ class _UserScreenState extends State<UserScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    
+
     return SafeArea(child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -228,21 +226,7 @@ class _UserScreenState extends State<UserScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue ),
 
-                  onPressed: (){
-                    _getCurrentPosition();
-
-                   if(serviceEnabled){
-                     MyAppState().startForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
-                      _saveData();
-                      _stopWatchTimer.onStartTimer();
-                      if(_currentPosition != null && _stopWatchTimer.isRunning){
-                        UserLocation  location = UserLocation(lat: _currentPosition?.latitude.toString(), lng: _currentPosition?.longitude.toString(), );
-                        UserActions action = UserActions(location: location,time: stopedTimerData,type: 'start');
-                          _userActionsProvider.fetchUserActions(action);
-
-                      }
-                    }
-                  },
+                  onPressed: _startTimer,
                   child: const Text(
                     'Start',
                     style: TextStyle(color: Colors.white),
@@ -254,18 +238,7 @@ class _UserScreenState extends State<UserScreen> {
                 child:ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.lightGreen ),
 
-                  onPressed: ()async{
-                    _stopWatchTimer.onStopTimer();
-                    MyAppState().stopForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
-                    UserLocation  location = UserLocation(lat: _currentPosition?.latitude.toString(), lng: _currentPosition?.longitude.toString(), );
-                    await  _getCurrentPosition();
-                    if( !_stopWatchTimer.isRunning ){
-                      _removeData();
-                      UserActions action = UserActions(location: location,time: stopedTimerData,type: 'end');
-                      await  _userActionsProvider.fetchUserActions(action);
-
-                    }
-                  },
+                  onPressed:_stopTimer,
                   child: const Text(
                     'Stop',
                     style: TextStyle(color: Colors.white),
@@ -315,6 +288,85 @@ class _UserScreenState extends State<UserScreen> {
         ]
     )
     ;
+  }
+
+  void _startTimer() async {
+    _getCurrentPosition();
+    if (!serviceEnabled) return;
+    if (!await FlutterForegroundTask.canDrawOverlays) {
+      if(context.mounted){
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permission Required'),
+            content: const Text(
+              'The app needs the SYSTEM_ALERT_WINDOW permission to function properly. Please grant the permission in the app settings.',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        ).then((value) => FlutterForegroundTask.openSystemAlertWindowSettings());
+      }      return;
+    }
+    setState(() {
+      MyAppState().startForegroundTask();
+    });
+    _saveData();
+    _stopWatchTimer.onStartTimer();
+    if (_currentPosition != null && _stopWatchTimer.isRunning) {
+      UserLocation location = UserLocation(
+          lat: _currentPosition?.latitude.toString(),
+          lng: _currentPosition?.longitude.toString());
+      UserActions action =
+      UserActions(location: location, time: stopedTimerData, type: 'start');
+      _userActionsProvider.fetchUserActions(action);
+    }
+  }
+
+  void _stopTimer()async{
+    _getCurrentPosition();
+    if (!serviceEnabled) return;
+    if (!await FlutterForegroundTask.canDrawOverlays) {
+      if(context.mounted){
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permission Required'),
+            content: const Text(
+              'The app needs the SYSTEM_ALERT_WINDOW permission to function properly. Please grant the permission in the app settings.',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      }      return;
+    }
+
+    setState(() {
+      MyAppState().stopForegroundTask();
+    });
+    _removeData();
+    _stopWatchTimer.onStopTimer();
+    if (_currentPosition != null && _stopWatchTimer.isRunning) {
+      UserLocation location = UserLocation(
+          lat: _currentPosition?.latitude.toString(),
+          lng: _currentPosition?.longitude.toString());
+      UserActions action =
+      UserActions(location: location, time: stopedTimerData, type: 'end');
+      _userActionsProvider.fetchUserActions(action);
+    }
   }
   void _handleClick(int item) {
     switch (item) {

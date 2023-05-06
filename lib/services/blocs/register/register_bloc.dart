@@ -19,8 +19,8 @@ class RegisterCubit extends Cubit<RegisterState> {
     emit(state.copyWith(
       firstName: firstName,
       status: Formz.validate([
-        lastName,
        firstName,
+        state.lastName,
         state.userName,
         state.password,
       ]),
@@ -58,8 +58,8 @@ class RegisterCubit extends Cubit<RegisterState> {
     emit(state.copyWith(
       password: password,
       status: Formz.validate([
-        state.password,
         state.userName,
+        state.lastName,
         password,
       ]),
     ));
@@ -68,32 +68,33 @@ class RegisterCubit extends Cubit<RegisterState> {
     emit(state.copyWith(
       role: value,
       status: Formz.validate([
-        state.password,
         state.userName,
         state.lastName,
+        state.password,
       ]),
     ));
   }
 
 
   Future<void> signUpCredentials() async {
+    String isSuccess;
     if (!state.status.isValidated) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
-      bool isSuccess = await _userDataProvider.signUp(
+      isSuccess  = await _userDataProvider.createUserWithNAmeEmailAndPassword(
         userName: state.userName.value,
         password: state.password.value,
         role: state.role!,
         firstName: state.firstName.value, lastName:state.lastName.value,
       );
 
-      if (isSuccess) {
+      if (isSuccess.isEmpty) {
         emit(state.copyWith(status: FormzStatus.submissionSuccess));
       } else {
-        emit(state.copyWith(status: FormzStatus.submissionFailure));
+        emit(state.copyWith(status: FormzStatus.submissionFailure,errorMessage: isSuccess));
       }
     } catch (e) {
-      emit(state.copyWith(status: FormzStatus.submissionFailure));
+      emit(state.copyWith(status: FormzStatus.submissionFailure,errorMessage: 'An error occurred while creating the user.'));
     }
   }
 }

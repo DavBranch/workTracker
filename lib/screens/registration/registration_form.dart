@@ -263,7 +263,7 @@ class _SignupButtonState extends State<_SignupButton> {
 
         child:TextButton(
           onPressed: () {
-
+      print(state.status.isValidated);
             if (state.status.isValidated) {
               isActive();
               context.read<RegisterCubit>().signUpCredentials();

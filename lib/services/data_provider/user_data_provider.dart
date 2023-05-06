@@ -53,11 +53,11 @@ class UserDataProvider {
 
 
   //Sign Up
-  Future<bool> signUp(
+  Future<String> signUp(
       {required String userName,
         required String password,
         required  String firstName,required String lastName,required String role}) async {
-    bool isSuscces;
+    String isSuscces = '';
 
     isSuscces = await createUserWithNAmeEmailAndPassword(
         userName: userName, password: password, firstName: firstName,lastName: lastName,role:role);
@@ -95,7 +95,7 @@ class UserDataProvider {
         body: jsonEncode(userData),
       );
       var body = jsonDecode(response.body);
-      var status =body['status'];
+      var status = body['status'];
       var data = body['data'];
 
       if (response.statusCode == 200 && status == true) {
@@ -107,7 +107,7 @@ class UserDataProvider {
         sessionDataProvider.setRefreshToken(refreshToken);
         return data;
       } else {
-        return {};
+        return body;
       }
     } catch (e) {
       debugPrint('$e');
@@ -117,14 +117,16 @@ class UserDataProvider {
   }
 
   //Signup
-  Future<bool> createUserWithNAmeEmailAndPassword(
-      {String? userName, String? password, String? firstName,String? lastName,String? role}) async {
+  Future<String> createUserWithNAmeEmailAndPassword(
+      {String? userName, String? password, String? firstName, String? lastName, String? role}
+      ) async {
+
     Map userData = {
-      'first_name': firstName,
-      'last_name': lastName,
-      'password': password,
-      'username': userName,
-      'role':role,
+      'first_name': firstName ?? '',
+      'last_name': lastName ?? '',
+      'password': password ?? '',
+      'username': userName ?? '',
+      'role': role ?? '',
     };
 
     try {
@@ -138,22 +140,19 @@ class UserDataProvider {
       var body = jsonDecode(response.body);
       var status = body['status'];
       if (status == true) {
-        var accessToken = body['access_token'];
-        var refreshToken = body['refresh_token'];
-        var role = body['role'];
-        sessionDataProvider.setAccessToken(accessToken);
-        sessionDataProvider.setRole(role);
-        sessionDataProvider.setRefreshToken(refreshToken);
-        return true;
+       var role =  body['data']['role'];
+         sessionDataProvider.setRole(role);
+        return ''; // Return an empty string to indicate success
       } else {
-        return false;
+        var errorMessage = body['message'];
+        return errorMessage; // Return the error message
       }
     } catch (e) {
       debugPrint('$e');
-
+      return 'An error occurred while creating the user.'; // Return a generic error message
     }
-    return false;
   }
+
 
 
 

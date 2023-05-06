@@ -51,9 +51,10 @@ class _MyPageState extends State<MyPage> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Pagination Example'),
+        title: Text('History'),
       ),
       body: Column(
         children: [
@@ -63,6 +64,7 @@ class _MyPageState extends State<MyPage> {
               child: ListView.builder(
                 itemCount: data.length + 1,
                 itemBuilder: (BuildContext context, int index) {
+
                   if (index == data.length) {
                     if (isLoading) {
                       return Center(
@@ -73,15 +75,62 @@ class _MyPageState extends State<MyPage> {
                     }
                   } else {
                     var user = data[index] as Datum;
-                    return  GestureDetector(
-                      //onTap: ()=>_openInfoWidthMap(context,user,true),
-                      child: IntrinsicHeight(
-                        child: Container(
-                          color: Colors.green,
-                          padding: const EdgeInsets.fromLTRB(
-                              10, 10, 10, 0),
 
-                          child: Card(
+                    return Container(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Card(
+
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                  width: 2.0, color: Colors.black),
+                            ),
+                            color: Colors.white,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('User: ${user.user?.username ?? 'none' }'),
+                              SizedBox(height: 16),
+                              Text('Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse('${user.date}'))}'),
+                              SizedBox(height: 16),
+                              Text('Start Location: ${user.startLocation?.lat}, ${user.startLocation?.lng}'),
+                              SizedBox(height: 16),
+                              Text('Current Location: ${user.currentLocation?.lat}, ${user.currentLocation?.lng}'),
+                              SizedBox(height: 16),
+                              Text('End Location: ${user.endLocation?.lat}, ${user.endLocation?.lat}'),
+                              SizedBox(height: 16),
+                              Text('Duration: ${user.duration}'),
+                              SizedBox(height: 16),
+                              Text('Times:'),
+                              if(user.times != null) for (var time in user!.times!)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Start: ${time.start}'),
+                                      SizedBox(height: 8),
+                                      Text('End: ${time.end}'),
+                                      SizedBox(height: 16),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                    return  GestureDetector(
+                     // onTap: ()=>_openInfoWidthMap(context,user!.user as UserInfo,true),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(
+                            10, 10, 10, 0),
+
+                      child: Column(
+                        children: [
+                          Card(
                             elevation: 0.0,
                             child: Container(
                               decoration: const BoxDecoration(
@@ -116,20 +165,26 @@ class _MyPageState extends State<MyPage> {
                                     ],
                                   ),
                                   const SizedBox(height: 10),
-                                  Row(
-                                    children: <Widget>[
-                                      Expanded(child: ListView(children: user.times!.map((e) => Container(color: Colors.green,) ).toList(),)),
-                                    ],
-                                  )
+                                  // Row(
+                                  //   children: <Widget>[
+                                  //     Expanded(child: ),
+                                  //   ],
+                                  // )
+                                  ListView.builder(
+                                      itemCount: 12,
+                                      itemBuilder: (builder,index){
+
+                                    return ListTile(title:Text('s'),);
+                                  })
                                 ],
 
 
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    );
+                      ));
                   }
                 },
               ),
