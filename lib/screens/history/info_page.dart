@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:worktracker/screens/edit_screen/edit_info_screen.dart';
 import 'package:worktracker/services/data_provider/user_data_provider.dart';
 import 'package:worktracker/services/models/info.dart';
 
 import '../../date_range/date_range_bottom_sheet_modal.dart';
 import '../../services/blocs/user/user_bloc.dart';
+import '../../services/models/user.dart';
 import '../../services/models/user_info.dart';
 import 'history_info_screen.dart';
 
@@ -18,6 +20,9 @@ class MyPage extends StatefulWidget {
 
 class _MyPageState extends State<MyPage> {
   int currentPage = 1;
+  int lastPage = 1;
+  String nexPageUrl = '';
+
   List<dynamic> data = [];
   bool isLoading = false;
   final DateTime now = DateTime. now();
@@ -32,13 +37,17 @@ class _MyPageState extends State<MyPage> {
       isLoading = true;
     });
 
-    final response = await http.get(Uri.parse(
-        'http://165.227.204.177/api/info?page=$currentPage')); // Replace with your API endpoint
-    final  dataList = jsonDecode(response.body)['data'];
-
-
+    final url = _hasDate ? 'http://165.227.204.177/api/info?date=${_date['startDate']}' : 'http://165.227.204.177/api/info?page=$currentPage';
+    final response = await http.get(Uri.parse(url)); // Replace with your API endpoint
+    final dataList = jsonDecode(response.body)['data'];
+    final currentPg = jsonDecode(response.body)['current_page'];
+    final lastPg = jsonDecode(response.body)['last_page'];
+    final nextPage = jsonDecode(response.body)['next_page_url'];
     setState(() {
       data = dataList.map((json) => Datum.fromJson(json)).toList();
+      currentPage  = currentPg;
+      lastPage = lastPg;
+      nexPageUrl = nextPage ?? '';
       isLoading = false;
     });
   }
@@ -54,7 +63,16 @@ class _MyPageState extends State<MyPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('History'),
+        title: const Text('History'),
+        backgroundColor: Colors.blueAccent,
+        actions: [
+          PopupMenuButton<int>(
+            onSelected: (item) => handleClick(item),
+            itemBuilder: (context) => [
+              const PopupMenuItem<int>(value: 0, child:  Text('Get Info')),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -67,124 +85,76 @@ class _MyPageState extends State<MyPage> {
 
                   if (index == data.length) {
                     if (isLoading) {
-                      return Center(
+                      return const Center(
                         child: CircularProgressIndicator(),
                       );
                     } else {
+                      _hasDate = false;
                       return Container();
                     }
                   } else {
                     var user = data[index] as Datum;
 
-                    return Container(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Card(
-
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              top: BorderSide(
-                                  width: 2.0, color: Colors.black),
+                    return GestureDetector(
+                      onTap: ()=>_openInfoWidthMap(context,user  ,true),
+                    child: Container(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Card(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                top: BorderSide(
+                                    width: 2.0, color: Colors.black),
+                              ),
+                              color: Colors.white,
                             ),
-                            color: Colors.white,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('User: ${user.user?.username ?? 'none' }'),
-                              SizedBox(height: 16),
-                              Text('Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse('${user.date}'))}'),
-                              SizedBox(height: 16),
-                              Text('Start Location: ${user.startLocation?.lat}, ${user.startLocation?.lng}'),
-                              SizedBox(height: 16),
-                              Text('Current Location: ${user.currentLocation?.lat}, ${user.currentLocation?.lng}'),
-                              SizedBox(height: 16),
-                              Text('End Location: ${user.endLocation?.lat}, ${user.endLocation?.lat}'),
-                              SizedBox(height: 16),
-                              Text('Duration: ${user.duration}'),
-                              SizedBox(height: 16),
-                              Text('Times:'),
-                              if(user.times != null) for (var time in user!.times!)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 16.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Start: ${time.start}'),
-                                      SizedBox(height: 8),
-                                      Text('End: ${time.end}'),
-                                      SizedBox(height: 16),
-                                    ],
-                                  ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8),
+                                Text('First Name: ${user.user?.firstName ?? '' }'),
+                                const SizedBox(height: 16),
+                                Text('Last Name: ${user.user?.lastName ?? '' }'),
+                                const SizedBox(height: 16),
+                                Text('Date: ${DateFormat('yyyy-MM-dd').format(DateTime.parse('${user.date}'))}'),
+                                const SizedBox(height: 16),
+                                Text('Duration: ${user.duration}'),
+                                const SizedBox(height: 16),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Times:'),
+                                    if(user.times != null) for (var time in user!.times!.take(2))
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 16.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('Start: ${time.start}'),
+                                            const SizedBox(height: 8),
+                                            Text('End: ${time.end}'),
+                                            const SizedBox(height: 16),
+                                          ],
+                                        ),
+                                      ),
+                                    if (user.times != null && user.times!.length > 2)
+                                      const Padding(
+                                        padding:  EdgeInsets.only(left: 16.0),
+                                        child: Align(
+                                            alignment:Alignment.bottomRight,
+                                            child: Text('more...',textAlign: TextAlign.right,)),
+                                      ),
+
+                                  ],
                                 ),
-                            ],
+
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     );
-                    return  GestureDetector(
-                     // onTap: ()=>_openInfoWidthMap(context,user!.user as UserInfo,true),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(
-                            10, 10, 10, 0),
-
-                      child: Column(
-                        children: [
-                          Card(
-                            elevation: 0.0,
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(
-                                      width: 2.0, color: Colors.black),
-                                ),
-                                color: Colors.white,
-                              ),
-                              child: Column(
-                                children: <Widget>[
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment
-                                        .start,
-                                    children: <Widget>[
-                                      Expanded(child:user!=null? Text('Username : ${user.user?.username ?? '' } \n\nFull Name: ${user.user?.firstName ?? ''} ${user.user?.lastName ?? ''}'): const Text('')),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: <Widget>[
-                                      Expanded(child: Text('Status : ${user.status ?? ''}')),
-                                      const SizedBox(width: 10),
-                                      Expanded(child:Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text('Date : ${DateFormat('yyyy-MM-dd').format(user.date!)}'),
-                                          Text('Start Location : $_currentAddress'),
-                                        ],
-                                      ),),
-
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  // Row(
-                                  //   children: <Widget>[
-                                  //     Expanded(child: ),
-                                  //   ],
-                                  // )
-                                  ListView.builder(
-                                      itemCount: 12,
-                                      itemBuilder: (builder,index){
-
-                                    return ListTile(title:Text('s'),);
-                                  })
-                                ],
-
-
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      ));
                   }
                 },
               ),
@@ -205,13 +175,13 @@ class _MyPageState extends State<MyPage> {
                     });
                     fetchData();
                   },
-                  child: Text('Previous'),
+                  child: const Text('Previous'),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 10.0,
                 ),
                 ElevatedButton(
-                  onPressed: data.isEmpty
+                  onPressed: currentPage < lastPage || nexPageUrl.isEmpty
                       ? null
                       : () {
                     setState(() {
@@ -220,7 +190,7 @@ class _MyPageState extends State<MyPage> {
                     });
                     fetchData();
                   },
-                  child: Text('Next'),
+                  child: const Text('Next'),
                 ),
               ],
             ),
@@ -238,13 +208,8 @@ class _MyPageState extends State<MyPage> {
     }
   }
   Future<void> _pullRefresh() async {
-    //final DateTime now = DateTime. now();
-    //final DateFormat formatter = DateFormat('yyyy-MM-dd');
-    //final String newDate = formatter. format(now);
-    // List<InfoUser> freshNumbers = await _userDataProvider.getUserInfo(firstCall: 'https://phplaravel-885408-3069483.cloudwaysapps.com/api/info?date=');
-    // setState(() {
-    //   _futureUsers = Future.value(freshNumbers);
-    // });
+    fetchData();
+
   }
   bool _onDateRangeAdd(){
 
@@ -257,10 +222,19 @@ class _MyPageState extends State<MyPage> {
         context: context,
         builder: (_)=>DateRangeBottomSheetModal( ctx: context,dateRangePost:(hasData,date)=>setState((){
           _hasDate = hasData;
-          if(hasData)_date=date;
+          if(hasData)_date = date;
+          if (hasData) {
+            setState(() {
+              currentPage = 1;
+              data = [];
+            });
+            fetchData();
+          }
+
         }),onDateReset: (reset)=> setState((){
           _hasDate = reset;
           _date = {};
+          fetchData();
           if(!reset){
 
           }
@@ -270,29 +244,12 @@ class _MyPageState extends State<MyPage> {
     return _hasDate;
   }
   void _openInfoWidthMap(
-      BuildContext context,UserInfo user ,bool isinfo) {
+      BuildContext context,Datum user ,bool isinfo) {
     FocusScope.of(context).requestFocus(FocusNode());
-    showModalBottomSheet(
-      isDismissible: false,
-      barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
-      elevation: 3,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      enableDrag: false  ,
-      context: context,
-      builder: (newContext) => BlocProvider.value(
-        value: BlocProvider.of<UsersBloc>(context),
-        child: HistoryInfoScreenSheetModal(
-          firstName: user.startTime.toString(),
-          lastName: user.endTime.toString(),
-          userName: user.userId.toString(),
-          password: user.endTime.toString(),
+    Navigator.of(context).push(MaterialPageRoute(builder: (_)=>HistoryInfoScreenSheetModal(
+      userInfo: user,
+      updateMyAccountInProgress: false,
+    )));
 
-          context: context,
-          id: user.id??0,
-          updateMyAccountInProgress: false,
-        ),
-      ),
-    );
   }
 }

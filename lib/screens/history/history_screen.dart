@@ -6,6 +6,7 @@ import 'package:worktracker/services/data_provider/user_data_provider.dart';
 
 import '../../date_range/date_range_bottom_sheet_modal.dart';
 import '../../services/blocs/user/user_bloc.dart';
+import '../../services/models/info.dart';
 import '../../services/models/user_info.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -83,7 +84,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           itemBuilder: (context, index) {
                             UserInfo? user = snapshot.data![index];
                             return GestureDetector(
-                              onTap: ()=>_openInfoWidthMap(context,user,true),
+                              onTap: ()=>_openInfoWidthMap(context,Datum(),true),
                               child: IntrinsicHeight(
                                 child: Container(
                                   padding: const EdgeInsets.fromLTRB(
@@ -211,7 +212,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   //   return _currentAddress;
   // }
   void _openInfoWidthMap(
-      BuildContext context,UserInfo user ,bool isinfo) {
+      BuildContext context,Datum user ,bool isinfo) {
     FocusScope.of(context).requestFocus(FocusNode());
     showModalBottomSheet(
       isDismissible: false,
@@ -224,13 +225,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (newContext) => BlocProvider.value(
         value: BlocProvider.of<UsersBloc>(context),
         child: HistoryInfoScreenSheetModal(
-          firstName: user.startTime.toString(),
-          lastName: user.endTime.toString(),
-          userName: user.userId.toString(),
-          password: user.endTime.toString(),
-
-          context: context,
-          id: user.id??0,
+         userInfo: user,
           updateMyAccountInProgress: false,
         ),
       ),

@@ -204,7 +204,7 @@ class UserDataProvider {
     return false;
   }
 
-  Future<Map> updateMyAccountFromApi({firstName, lastName, jobTitle,id}) async {
+  Future<Map> updateMyAccountFromApi({firstName, lastName, userName,role,password,id}) async {
     var token = await sessionDataProvider.readsAccessToken();
 
     if (token == null) {
@@ -225,8 +225,14 @@ class UserDataProvider {
       requestBody["last_name"] = lastName;
     }
 
-    if (jobTitle != null) {
-      requestBody["username"] = jobTitle;
+    if (userName != null && lastName != '') {
+      requestBody["username"] = userName;
+    }
+    if (password != null && lastName != '' )  {
+      requestBody["password"] = password;
+    }
+    if (role != null && lastName != '' ) {
+      requestBody["role"] = role;
     }
     try {
       final client = http.Client();
@@ -244,7 +250,9 @@ class UserDataProvider {
           return await updateMyAccountFromApi(
               firstName: firstName,
               lastName: lastName,
-              jobTitle: jobTitle,
+              userName: userName,
+              password: password,
+              role: role,
               id: id
           );
         } else {

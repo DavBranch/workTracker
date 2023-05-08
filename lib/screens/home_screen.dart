@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/ui/with_foreground_task.dart';
 import 'package:worktracker/screens/Login/login_screen.dart';
 import 'package:worktracker/screens/home_screen_form/user_form.dart';
@@ -43,6 +44,6 @@ Future<void> loginUser() async {
 
   @override
   Widget build(BuildContext context) {
-    return  WithForegroundTask(child: SafeArea(child: isValid !=null  && !isUser!  ? const UsersScreen():isValid !=null  && isUser! ?const UserScreen() : const LoginScreen()));
+    return  WithForegroundTask(child: Scaffold(body: isValid !=null  && !isUser!  ? const UsersScreen():isValid !=null  && isUser! ?const UserScreen() : const LoginScreen()));
   }
 }

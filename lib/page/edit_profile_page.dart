@@ -103,13 +103,9 @@ class _MyAccountState extends State<_MyAccount> {
       builder: (newContext) => BlocProvider.value(
         value: BlocProvider.of<UsersBloc>(context),
         child: EditMyInfoBottomSheetModal(
-          firstName: "${widget.data![index].firstName}",
-          userName: "${widget.data![index].username}",
-          password: "${widget.data![index].lastName}",
           isInfo: false,
-          id: widget.data![index].id!,
           context: context,
-          lastName: "${widget.data![index].lastName}",
+          user:widget.data![index],
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,6 +14,7 @@ import 'package:worktracker/services/data_provider/users_info_api.dart';
 import 'package:worktracker/services/models/user_actions.dart';
 
 import '../../main.dart';
+import '../../services/blocs/login/login_bloc.dart';
 
 class UserScreen extends StatefulWidget {
   const  UserScreen({Key? key}) : super(key: key);
@@ -188,19 +190,13 @@ class _UserScreenState extends State<UserScreen> {
     return SafeArea(child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
+          backgroundColor: Colors.blueAccent,
           elevation: 0.0,title:const Text('Working Time'),
           actions: [
             PopupMenuButton<int>(
               onSelected: (item) => _handleClick(item),
               itemBuilder: (context) => [
-
-                PopupMenuItem<int>(value: 2, child: GestureDetector(
-                    onTap: (){
-                      _sessionDataProvider.deleteAllToken();
-
-                      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
-                          const LoginScreen()), (Route<dynamic> route) => false);                    },
-                    child: const Text('Logout'))),
+              const   PopupMenuItem<int>(value: 0, child:  Text('Logout')),
 
 
               ],
@@ -371,10 +367,10 @@ class _UserScreenState extends State<UserScreen> {
   void _handleClick(int item) {
     switch (item) {
       case 0:
-        break;
-      case 1:
-        break;
-      case 2:
+        _sessionDataProvider.deleteAllToken();
+        context.read<LoginCubit>().logOut();
+        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
+        const LoginScreen()), (Route<dynamic> route) => false);
         break;
     }
   }

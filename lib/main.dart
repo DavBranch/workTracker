@@ -14,7 +14,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:location/location.dart';
 import 'package:worktracker/base_data/base_api.dart';
 import 'screens/home_screen.dart';
 import 'screens/home_screen_form/user_form.dart';
@@ -47,8 +46,8 @@ class MyTaskHandler extends TaskHandler {
   //UserActionsProvider? _userActionsProvider;
   final sessionDataProvider = SessionDataProvider();
   SendPort? _sendPort;
-
-  Future<void> updateLocation(UserLocation location)async{
+  int _eventCount = 0;
+  Future<void> updateLocation(UserLocation location) async{
     var token = await sessionDataProvider.readsAccessToken();
     final userdataProvider = UserDataProvider();
 
@@ -67,9 +66,9 @@ class MyTaskHandler extends TaskHandler {
         body: json.encode(userData),
       );
       if (response.statusCode == 200) {
- if (kDebugMode) {
-   debugPrint('Davs davay mernem qezz ');
- }
+
+   print('Lat :${userData['location']['lat']} \n Lng :${userData['location']['lng']}');
+
 
       } else if (response.statusCode == 401) {
         bool isTrue = await userdataProvider.refresh();
@@ -100,28 +99,45 @@ class MyTaskHandler extends TaskHandler {
 
   @override
   Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
+    try {
+      // Get the user's current position
+       await Geolocator.getCurrentPosition(    desiredAccuracy: LocationAccuracy.high,).then((value) => updateLocation(UserLocation(
+         lng: value.longitude.toString(),
+         lat: value.latitude.toString(),
+       )));
 
-    Position position = await Geolocator.getCurrentPosition();
-    FlutterForegroundTask.updateService(
-      notificationTitle: 'FirstTaskHandler',
-      notificationText: "${timestamp.year}-0${timestamp.month}-0${timestamp
-          .day} \n Time ${timestamp.hour}:${timestamp.minute}:${timestamp
-          .second}",
-   // callback:  updateCallback ,
-    ).whenComplete(() async{
-       updateLocation(UserLocation(
-          lng: position.longitude.toString(), lat: position.latitude.toString()));
-    });
+      // Convert the DateTime object to a Map
+      final timestampMap = {
+        'year': timestamp.year,
+        'month': timestamp.month,
+        'day': timestamp.day,
+        'hour': timestamp.hour,
+        'minute': timestamp.minute,
+        'second': _eventCount,
+      };
 
-    // Send data to the main isolate.
-    sendPort?.send(timestamp);
+      // Update the foreground task notification
+      await FlutterForegroundTask.updateService(
+        notificationTitle: 'FirstTaskHandler',
+        notificationText: '$_eventCount',
+      );
 
+      // Update the user's location
+      
+
+      // Send data to the main isolate
+      sendPort?.send(_eventCount);
+       _eventCount++;
+    } catch (e) {
+      print('Error while updating location: $e');
+    }
 
     if (kDebugMode) {
       print('cicik');
     }
-
   }
+
+
 
 
   @override
@@ -213,7 +229,6 @@ class MyApp extends StatefulWidget {
 class MyAppState extends State<MyApp> with WidgetsBindingObserver {
   String? initialMessage;
   //final UserActionsProvider _userActionsProvider = UserActionsProvider();
-  LocationData? _locationData;
 
   late Timer timer;
   //late Position _currentPosition;
@@ -341,32 +356,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
     });
   }
-  Future<void> initPlatformState() async {
-    Location location =  Location();
-    bool serviceEnabled;
-    PermissionStatus permissionGranted;
 
-    serviceEnabled = await location.serviceEnabled();
-    if (!serviceEnabled) {
-      serviceEnabled = await location.requestService();
-      if (!serviceEnabled) {
-        return;
-      }
-    }
-
-    permissionGranted = await location.hasPermission();
-    if (permissionGranted == PermissionStatus.
-
-    denied) {
-      permissionGranted = await location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    _locationData = await location.getLocation();
-    debugPrint("ciki piki _______________________$_locationData");
-  }
 
   Future<bool> _handleLocationPermission() async {
 

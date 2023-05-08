@@ -40,7 +40,8 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
     }
   }
     Stream<EditUserState> _mapEditMyAccountToState(EditMyUser event) async* {
-      if (event.firstName.isNotEmpty || event.lastName.isNotEmpty || event.userName.isNotEmpty) {
+      if (event.user.username!.isNotEmpty ||event.user.firstName!.isNotEmpty  || event.user.lastName!.isNotEmpty
+      || event.user.role!.isNotEmpty || event.user.password!.isNotEmpty  ) {
         final currentState = state;
 
         if (currentState is MyAccountLoaded) {
@@ -48,14 +49,16 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
         }
 
         final Map myAccountData = await _myAccountRepository.updateMyAccountFromApi(
-          firstName: event.firstName,
-          lastName: event.lastName,
-          jobTitle: event.userName,
-          id: event.id,
+          firstName: event.user.firstName,
+          lastName: event.user.lastName,
+          userName:event.user.username,
+          role:event.user.role ,
+          password: event.user.password,
+          id:  event.user.id,
         );
 
         if (myAccountData['errors'] == null) {
-          final User myAccountData = await _myAccountRepository.getUserById(2.toString());
+          final User myAccountData = await _myAccountRepository.getUserById(event.user.id.toString());
 
           if (currentState is MyAccountLoaded) {
             yield currentState.copyWith(

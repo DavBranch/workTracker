@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../base_data/base_api.dart';
 import '../widget/date_field_widget/date_filed_widget.dart';
 
 class DateRangeBottomSheetModal extends StatefulWidget {
@@ -19,7 +22,26 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
   String? _startDate;
   String? _endDate;
 
+  Future<void> fetchData(String startDate) async {
 
+try{
+
+  final headers = {
+    'Content-Type': 'application/json',
+  };
+  final response = await http.post(Uri.parse(Api.allInfo(startDate)), headers: headers,);
+  if (response.statusCode == 200) {
+
+    debugPrint('success response');
+  } else {
+    debugPrint('field response');
+
+  }
+}catch(e){
+  print(e);
+}
+
+  }
   @override
   void initState() {
 
@@ -33,9 +55,8 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
     if(startDate!=null){
       switch (searchSourceType) {
         case 'project_history_date':isTrue = true;
-
+        fetchData(startDate);
         break;
-
 
       }
 

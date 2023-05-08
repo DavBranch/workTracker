@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:worktracker/services/blocs/user/user_bloc.dart';
+import 'package:worktracker/services/models/info.dart';
+import 'package:worktracker/services/models/user_info.dart';
 
 // Widgets
 import '../../services/blocs/user/user_state.dart';
@@ -9,22 +12,12 @@ import '../../widget/history_info/history_body.dart';
 
 
 class HistoryInfoScreenSheetModal extends StatefulWidget {
-  final BuildContext context;
-  final String firstName;
-  final String lastName;
-  final String userName;
-  final String password;
-  final int id;
+ final Datum userInfo;
   final bool updateMyAccountInProgress;
 
   const HistoryInfoScreenSheetModal({
     Key? key,
-    required this.id,
-    required this.context,
-    required this.firstName,
-    required this.lastName,
-    required this.userName,
-    required this.password,
+    required this.userInfo,
     required this.updateMyAccountInProgress,
   }) : super(key: key);
 
@@ -34,19 +27,40 @@ class HistoryInfoScreenSheetModal extends StatefulWidget {
 
 class HistoryInfoScreenSheetModalState extends State<HistoryInfoScreenSheetModal> {
   //
+  List<LatLng> positions = [];
+
   // String? _firstName;
   // String? _userName;
   // int? _id;
   // String? _password;
-
-
+void getLatLng(){
+  var current = widget.userInfo.currentLocation;
+  var start = widget.userInfo.startLocation;
+  var end = widget.userInfo.endLocation;
+  positions = [
+    LatLng(parseLatLng(current!.lat!), parseLatLng(current!.lng!)),
+    LatLng(parseLatLng(start!.lat!), parseLatLng(start!.lng!)),
+    LatLng(parseLatLng(end!.lat!), parseLatLng(end!.lng!)),
+  ];
+}
+  double parseLatLng(String loc){
+  return double.parse(loc);
+}
+@override
+  void initState() {
+  getLatLng();
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
 
     return BlocBuilder<UsersBloc, EditUserState>(builder: (BuildContext _, state) {
-      return SizedBox(
-        height: MediaQuery.of(context).size.height ,
-        child: Stack(
+      return Scaffold(
+
+        appBar: AppBar(
+          title: Text('User Info'),
+        ),
+        body: Stack(
           children: <Widget>[
             Container(
               child: state.updateMyAccountInProgress??false ? Container(
@@ -59,15 +73,8 @@ class HistoryInfoScreenSheetModalState extends State<HistoryInfoScreenSheetModal
                 children: [
                   Expanded(
                     child: HistorySheetContainerBody(
-                      isInfo: widget.updateMyAccountInProgress,
-                      status: 'ongoing',
-                      startTime: '2022-12-18',
-                      startLocation: 'start_location": {"lat": "56.57678765","lng": "15.161"}',
-                      endTime: '2022-12-18',
-                      endLocation:  'start_location": {"lat": "56.57678765","lng": "15.161"}',
-                      date: '2022-12-18',
-                      currentLocation:  'start_location": {"lat": "56.57678765","lng": "15.161"}',
-
+                     userInfo: widget.userInfo,
+                      positions: positions,
                     ),
                   ),
 
@@ -76,11 +83,7 @@ class HistoryInfoScreenSheetModalState extends State<HistoryInfoScreenSheetModal
               ),
 
             ),
-            const    Padding(
-              padding:  EdgeInsets.only(top: 20),
-              child: HistoryInfoAppBar(
-              ),
-            ),
+
           ],
         ),
       );

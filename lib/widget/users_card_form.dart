@@ -8,6 +8,7 @@ import 'package:worktracker/widget/user_info/info_section.dart';
 import '../screens/edit_screen/edit_info_screen.dart';
 import '../services/blocs/user/user_bloc.dart';
 import '../services/models/user.dart';
+import 'delete_user_dialog.dart';
 
 
 
@@ -54,42 +55,55 @@ class _DashboardDataState extends State<DashboardData> {
   }
 
 void _onDelete({required List<User> users,required int index,required int userId})async{
-    users.removeAt(index);
- bool isDelete = await _userDataProvider.deleteUser(userId);
-  if(isDelete) {
-    if(context.mounted){
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("User Deleted!"),
-      ));
-    }
 
-  }
- setState((){});
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return DeleteUserDialog(userId: userId,onDeleted: ()async{
+          final bool value = await _userDataProvider.deleteUser(userId);
+          if (value) {
+            users.removeAt(index);
+            _pullRefresh();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("User Deleted!")),
+              );
+              Navigator.pop(context);
+            }
+          }
+
+        },);
+      },
+    );
 }
   void _openEditMyInfoBottomSheetModal(
       BuildContext context,{required User user}) {
-    FocusScope.of(context).requestFocus(FocusNode());
-    showModalBottomSheet(
-      isDismissible: true,
-      barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
-      elevation: 3,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      enableDrag: true,
+    Navigator.of(context).push(MaterialPageRoute(builder: (_)=>EditMyInfoBottomSheetModal(
+      user: user,
       context: context,
-      builder: (newContext) => BlocProvider.value(
-        value: BlocProvider.of<UsersBloc>(context),
-        child: EditMyInfoBottomSheetModal(
-          firstName: user.firstName!,
-          lastName: user.lastName!,
-          userName: user.username!,
-          password: user.role!,
-          context: context,
-          isInfo: true,
-          id: user.id!,
-        ),
-      ),
-    );
+    ),));
+    FocusScope.of(context).requestFocus(FocusNode());
+    // showModalBottomSheet(
+    //   isDismissible: true,
+    //   barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
+    //   elevation: 3,
+    //   useRootNavigator: true,
+    //   isScrollControlled: true,
+    //   enableDrag: true,
+    //   context: context,
+    //   builder: (newContext) => BlocProvider.value(
+    //     value: BlocProvider.of<UsersBloc>(context),
+    //     child: EditMyInfoBottomSheetModal(
+    //       firstName: user.firstName!,
+    //       lastName: user.lastName!,
+    //       userName: user.username!,
+    //       password: user.role!,
+    //       context: context,
+    //       isInfo: true,
+    //       id: user.id!,
+    //     ),
+    //   ),
+    // );
   }
   @override
   Widget build(BuildContext context) {
@@ -110,7 +124,7 @@ void _onDelete({required List<User> users,required int index,required int userId
               default:
                 if(snapshot.hasError){
                   return Text( "${snapshot.hasError}");
-                }else if(snapshot.hasData){
+                }else if(snapshot.hasData && snapshot.data != null ){
                   return Expanded(
                     child: RefreshIndicator(
                       onRefresh: _pullRefresh,
@@ -119,24 +133,20 @@ void _onDelete({required List<User> users,required int index,required int userId
                           scrollDirection: Axis.vertical,
                           itemCount: snapshot.data?.length,
                           itemBuilder: (context, index) {
+                            print(index);
                             User user = snapshot.data![index];
+                            return Container(
+                              padding: const EdgeInsets.all(8.0),
+                              child: InfoSection(
+                                onDelete:()=> _onDelete( userId: user.id!,users:snapshot.data!,index:index,),
+                                fullName: '${user.firstName}',
+                                lastName: "${user.lastName}",
+                                userName:"${user.username}",
+                                role:"${user.role}",
+                                isLoading: true,
 
-                            return GestureDetector(
-                              onTap: ()=>_openInfoWidthMap(context,user,true),
+                                onEdit:()=> _openEditMyInfoBottomSheetModal(context,user: user),
 
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: InfoSection(
-                                  onDelete:()=> _onDelete( userId: user.id!,users:snapshot.data!,index:index,),
-                                  fullName: '${user.firstName}',
-                                  lastName: "${user.lastName}",
-                                  userName:"${user.username}",
-                                  role:"${user.role}",
-                                  isLoading: true,
-
-                                  onEdit:()=> _openEditMyInfoBottomSheetModal(context,user: user),
-
-                                ),
                               ),
                             );
 
@@ -154,9 +164,9 @@ void _onDelete({required List<User> users,required int index,required int userId
     );
   }
   Future<void> _pullRefresh() async {
-    List<User> freshNumbers = await _userDataProvider.getUser();
+    List<User> fetchUsers = await _userDataProvider.getUser();
     setState(() {
-      _users = Future.value(freshNumbers);
+      _users = Future.value(fetchUsers);
     });
   }
 }
