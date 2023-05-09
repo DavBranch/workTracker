@@ -77,10 +77,7 @@ class SheetContainerBodyState extends State<SheetContainerBody> {
      onChanged: (String? newValue) {
 
        setState(() {
-         dropdownvalue = newValue!;
-        _userRoleChange(dropdownvalue.toLowerCase());
-
-
+        _userRoleChange(newValue?.toLowerCase());
        });
      },
    );
@@ -142,7 +139,7 @@ class SheetContainerBodyState extends State<SheetContainerBody> {
     }
   }void _userRoleChange(role) {
     if (role != '') {
-      widget.pushEditedJobTitle!(role);
+      widget.pushEditedRole!(role);
     }
   }
   void _onPasswordChange(password) {

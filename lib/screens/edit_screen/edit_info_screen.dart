@@ -42,7 +42,9 @@ class EditMyInfoBottomSheetModalState extends State<EditMyInfoBottomSheetModal> 
 
   void _getChangedPassword(psw) {
     setState(() => _password = psw);
-  } void _getChangedRole(role) {
+  }
+
+  void _getChangedRole(role) {
     setState(() => _role = role);
   }
 

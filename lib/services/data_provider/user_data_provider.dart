@@ -225,13 +225,13 @@ class UserDataProvider {
       requestBody["last_name"] = lastName;
     }
 
-    if (userName != null && lastName != '') {
+    if (userName != null && userName != '') {
       requestBody["username"] = userName;
     }
-    if (password != null && lastName != '' )  {
+    if (password != null && password != '' )  {
       requestBody["password"] = password;
     }
-    if (role != null && lastName != '' ) {
+    if (role != null && role != '' ) {
       requestBody["role"] = role;
     }
     try {

@@ -98,7 +98,7 @@ class _MyPageState extends State<MyPage> {
                     return GestureDetector(
                       onTap: ()=>_openInfoWidthMap(context,user  ,true),
                     child: Container(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Card(
                           child: Container(
                             padding: EdgeInsets.symmetric(horizontal: 10),
@@ -140,10 +140,10 @@ class _MyPageState extends State<MyPage> {
                                       ),
                                     if (user.times != null && user.times!.length > 2)
                                       const Padding(
-                                        padding:  EdgeInsets.only(left: 16.0),
+                                        padding:  EdgeInsets.only(left: 16.0,top: 20),
                                         child: Align(
                                             alignment:Alignment.bottomRight,
-                                            child: Text('more...',textAlign: TextAlign.right,)),
+                                            child: Text('...',textAlign: TextAlign.right,style: TextStyle(fontSize: 16),)),
                                       ),
 
                                   ],

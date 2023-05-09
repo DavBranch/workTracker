@@ -39,69 +39,45 @@ class _UserScreenState extends State<UserScreen> {
     },
   );
   Position? _currentPosition;
-
-  // Future<void> _getCurrentPosition()async {
-  //   final hasPermission = await _handleLocationPermission();
-  //
-  //   if (!hasPermission) return;
-  //   await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
-  //       .then((Position position) {
-  //     setState(() => _currentPosition = position);
-  //   }).catchError((e) {
-  //     debugPrint(e);
-  //   });
-  // }
   Future<void> _getCurrentPosition() async {
     // Check if location permission is granted and request permission if necessary
-    if (await Permission.location.request().isGranted) {
+    final permissionStatus = await Permission.location.request();
+    if (permissionStatus.isGranted) {
       // permission is granted, get the location
       try {
-        final GeolocatorPlatform geolocator = GeolocatorPlatform.instance;
-        final Position position = await geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+        final geolocator = GeolocatorPlatform.instance;
+        final position = await geolocator.getCurrentPosition(
+            locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high));
         setState(() {
           _currentPosition = position;
         });
       } catch (error) {
         print(error);
       }
-    } else {
-      // permission is not granted, request it
-      await Permission.location.request();
-      // check again if permission is granted or not
-      if (await Permission.location.request().isGranted) {
-        // permission is granted, get the location
-        try {
-          final GeolocatorPlatform geolocator = GeolocatorPlatform.instance;
-          final Position position = await geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
-          setState(() {
-            _currentPosition = position;
-          });
-        } catch (error) {
-          print(error);
-        }
-      } else {
-        // permission is denied or permanently denied, show an alert or dialog
-        showDialog(
-          context: context,
-          builder: (BuildContext context) => AlertDialog(
-            title: const Text('Location Permission'),
-            content: const Text('Please enable location services all the time'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('CANCEL'),
-              ),
-              TextButton(
-                onPressed: () => openAppSettings(),
-                child: const Text('SETTINGS'),
-              ),
-            ],
-          ),
-        );
-      }
+    } else if (permissionStatus.isDenied ||
+        permissionStatus.isPermanentlyDenied) {
+      // permission is not granted or permanently denied, show an alert or dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Location Permission'),
+          content: const Text('Please enable location services all the time'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () => openAppSettings(),
+              child: const Text('SETTINGS'),
+            ),
+          ],
+        ),
+      );
     }
   }
+
 
   Future<bool> _handleLocationPermission() async{
 
@@ -311,7 +287,7 @@ class _UserScreenState extends State<UserScreen> {
       }      return;
     }
     setState(() {
-      MyAppState().startForegroundTask();
+      HomeScreenState().startForegroundTask();
     });
     _saveData();
     _stopWatchTimer.onStartTimer();
@@ -351,7 +327,7 @@ class _UserScreenState extends State<UserScreen> {
     }
 
     setState(() {
-      MyAppState().stopForegroundTask();
+      HomeScreenState().stopForegroundTask();
     });
     _removeData();
     _stopWatchTimer.onStopTimer();

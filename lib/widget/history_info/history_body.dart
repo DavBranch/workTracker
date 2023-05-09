@@ -33,7 +33,7 @@ class HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
  final  _markers = <Marker>[];
 
 String  userStatusInfo(){
-  if(widget.positions?[1] != null && widget.positions?[2] == null) return'ongoing';
+  if((widget.positions?[1] != null  && widget.positions?[1].longitude != 0.0 && widget.positions?[1].latitude != 0.0)&& (widget.positions?[2].longitude == 0.0 && widget.positions?[2].latitude == 0.0)) return'ongoing';
   return 'close';
 }
   @override

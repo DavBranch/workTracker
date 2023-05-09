@@ -33,16 +33,20 @@ class HistoryInfoScreenSheetModalState extends State<HistoryInfoScreenSheetModal
   // String? _userName;
   // int? _id;
   // String? _password;
-void getLatLng(){
-  var current = widget.userInfo.currentLocation;
-  var start = widget.userInfo.startLocation;
-  var end = widget.userInfo.endLocation;
-  positions = [
-    LatLng(parseLatLng(current!.lat!), parseLatLng(current!.lng!)),
-    LatLng(parseLatLng(start!.lat!), parseLatLng(start!.lng!)),
-    LatLng(parseLatLng(end!.lat!), parseLatLng(end!.lng!)),
-  ];
-}
+  void getLatLng() {
+    var current = widget.userInfo.currentLocation;
+    var start = widget.userInfo.startLocation;
+    var end = widget.userInfo.endLocation;
+
+
+
+    positions = [
+      LatLng(parseLatLng(current?.lat ?? "0.0"), parseLatLng(current?.lng ?? "0.0")),
+      LatLng(parseLatLng(start?.lat ?? "0.0"), parseLatLng(start?.lng ?? "0.0")),
+      LatLng(parseLatLng(end?.lat ?? "0.0"), parseLatLng(end?.lng ?? "0.0")),
+    ];
+  }
+
   double parseLatLng(String loc){
   return double.parse(loc);
 }
