@@ -8,7 +8,6 @@ import 'package:worktracker/widget/edit_info/info_sheet_container_body.dart';
 
 // Widgets
 import '../../services/blocs/user/user_state.dart';
-import '../../widget/edit_info/app_bar.dart';
 
 
 class InfoScreenSheetModal extends StatefulWidget {
@@ -23,10 +22,10 @@ class InfoScreenSheetModal extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _InfoScreenSheetModalState createState() =>  _InfoScreenSheetModalState();
+  InfoScreenSheetModalState createState() =>  InfoScreenSheetModalState();
 }
 
-class _InfoScreenSheetModalState extends State<InfoScreenSheetModal> {
+class InfoScreenSheetModalState extends State<InfoScreenSheetModal> {
   Future<UserInfo>? _users;
   final UserDataProvider _userDataProvider = UserDataProvider();
 
@@ -46,14 +45,14 @@ class _InfoScreenSheetModalState extends State<InfoScreenSheetModal> {
   Widget build(BuildContext context) {
 
     return BlocBuilder<UsersBloc, EditUserState>(builder: (BuildContext _, state) {
-      return Container(
+      return SizedBox(
         height: MediaQuery.of(context).size.height ,
         child: Stack(
           children: <Widget>[
             Container(
               child: state.updateMyAccountInProgress??false ? Container(
                 color: Colors.white.withOpacity(0.9),
-                child: Align(
+                child: const Align(
                   alignment: Alignment.center,
                   child: CircularProgressIndicator(),
                 ),
@@ -77,9 +76,9 @@ class _InfoScreenSheetModalState extends State<InfoScreenSheetModal> {
                        final   UserInfo? usersInfo = snapshot.data;
                           return Expanded(
                             child: InfoSheetBody(
-                              firstName: widget?.user?.firstName ?? '',
-                              userName: widget?.user?.username ?? '',
-                              lastName: widget?.user?.lastName ?? '',
+                              firstName: widget.user?.firstName ?? '',
+                              userName: widget.user?.username ?? '',
+                              lastName: widget.user?.lastName ?? '',
                               date: usersInfo?.date.toString() ?? '',
                               startTime: usersInfo?.startTime.toString() ?? '',
                               startLocation: usersInfo?.startLocation,
@@ -89,7 +88,7 @@ class _InfoScreenSheetModalState extends State<InfoScreenSheetModal> {
                             ),
                           );
                         }else{
-                          return Center(child: const Text('No data'));
+                          return const Center(child: Text('No data'));
                         }
                     }
                   })

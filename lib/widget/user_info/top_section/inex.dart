@@ -16,7 +16,7 @@ class TopSection extends StatelessWidget {
   final Function()? onDelete;
 
 
-  TopSection({
+  const TopSection({super.key,
     required this.fullName,
     required this.lasName,
     required this.userName,
@@ -37,7 +37,7 @@ class TopSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
 
-          PersonalDatas(
+          PersonalData(
               fullName: fullName,
               userName: userName,
               lastName: lasName,

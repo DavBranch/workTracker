@@ -1,5 +1,8 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter/material.dart';
 import 'package:formz/formz.dart';
+import 'package:worktracker/screens/Login/login_form.dart';
+import 'package:worktracker/services/data_provider/session_data_providers.dart';
 
 import '../../data_provider/user_data_provider.dart';
 import '../../fileds_validations/email.dart';
@@ -10,10 +13,10 @@ class LoginCubit extends Cubit<LoginState> {
   LoginCubit(this._userDataProvider) : super(const LoginState());
 
   final UserDataProvider _userDataProvider;
-
+ final _sessionDatProvider  = SessionDataProvider();
   void emailChanged(String value) {
     final email = UserName.dirty(value);
-    print(email);
+    debugPrint("$email");
     emit(state.copyWith(
       email: email,
       status: Formz.validate([email, state.password]),
@@ -26,6 +29,9 @@ class LoginCubit extends Cubit<LoginState> {
       password: password,
       status: Formz.validate([state.userName, password]),
     ));
+  }
+  void logOut(){
+    emit(state.copyWith(email: const UserName.pure(),password:  const Password.pure(),status: FormzStatus.pure),);
   }
 
   Future<void> loginWithCredentials() async {

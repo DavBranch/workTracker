@@ -5,81 +5,82 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:location/location.dart';
+import 'package:intl/intl.dart';
 import 'package:worktracker/base_data/base_api.dart';
-import 'package:worktracker/utils/user_preferences.dart';
-import 'screens/home_screen.dart';
+import 'package:worktracker/screens/Login/login_screen.dart';
+import 'package:worktracker/screens/users/users.dart';
 import 'screens/home_screen_form/user_form.dart';
 import 'services/blocs/login/login_bloc.dart';
 import 'services/blocs/register/register_bloc.dart';
 import 'services/blocs/user/user_bloc.dart';
 import 'services/blocs/user/user_state.dart';
 import 'services/data_provider/user_data_provider.dart';
-import 'services/data_provider/users_info_api.dart';
 import 'services/models/user_actions.dart';
 import 'services/data_provider/session_data_providers.dart';
-bool isAdmin = false;
-const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'high_importance_channel', // id
-    'High Importance Notifications', // title
-    description:
-    'This channel is used for important notifications.', // description
-    importance: Importance.high,
-    playSound: true);
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-FlutterLocalNotificationsPlugin();
+void main() async {
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    debugPrint('App was detached!');
+  });
+  initialization();
+  runApp(const WorkTrackerApp());
+}
+
 
 @pragma('vm:entry-point')
 void startCallback() {
   // The setTaskHandler function must be called to handle the task in the background.
   FlutterForegroundTask.setTaskHandler(MyTaskHandler());
 }
-
 class MyTaskHandler extends TaskHandler {
-  UserActionsProvider? _userActionsProvider;
-  final sessionDataProvider = SessionDataProvider();
   SendPort? _sendPort;
   int _eventCount = 0;
+  SessionDataProvider sessionDataProvider = SessionDataProvider();
+  Future<void> updateLocation(UserLocation location) async{
+    var token = await sessionDataProvider.readsAccessToken();
+    final userdataProvider = UserDataProvider();
 
-  Future<void> updateLocation(UserLocation location)async{
     Map userData = {"location": {
     "lat":"${location.lat}",
     "lng":"${location.lng}"
     }};
-    debugPrint('Debug : cicik');
-    //var refTk = sessionDataProvider.readRefreshToken();
-    var accTk = await sessionDataProvider.readsAccessToken();
+
     try {
       var response = await http.post(
         Uri.parse(Api.updateLocation),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization':'Bearer $accTk'
+          'Authorization':'Bearer $token'
         },
         body: json.encode(userData),
       );
       if (response.statusCode == 200) {
 
- if (kDebugMode) {
-   print('Davs davay mernem qezz ${location.lat}    ');
- }
+   debugPrint('Lat :${userData['location']['lat']} \n Lng :${userData['location']['lng']}');
 
+
+      } else if (response.statusCode == 401) {
+        bool isTrue = await userdataProvider.refresh();
+
+        if (isTrue) {
+          return await updateLocation(location); // Call saveFavorite recursively after refreshing token
+        } else {
+          debugPrint("false");
+        }
       } else {
-        print("failed");
+        debugPrint("failed");
 
       }
     } catch (e) {
-      print(e);
+      debugPrint("$e");
     }
 
   }
@@ -90,34 +91,32 @@ class MyTaskHandler extends TaskHandler {
     // You can use the getData function to get the stored data.
     final customData =
     await FlutterForegroundTask.getData<String>(key: 'customData');
-    print('customData: $customData');
+    debugPrint('customData: $customData');
   }
 
   @override
   Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
+    String formattedTimestamp =
+    DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
 
-    Position position = await Geolocator.getCurrentPosition();
     FlutterForegroundTask.updateService(
-      notificationTitle: 'FirstTaskHandler',
-      notificationText: "${timestamp.year}-0${timestamp.month}-0${timestamp
-          .day} \n Time ${timestamp.hour}:${timestamp.minute}:${timestamp
-          .second}",
-   // callback:  updateCallback ,
-    ).whenComplete(() async{
-       updateLocation(UserLocation(
-          lng: position.longitude.toString(), lat: position.latitude.toString()));
-    });
+      notificationTitle: 'WorkTracker',
+      notificationText: 'Date: $formattedTimestamp',
+    );
+
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    UserLocation userLocation = UserLocation(
+        lat: position.latitude.toString(),
+        lng: position.longitude.toString());
+    await updateLocation(userLocation);
 
     // Send data to the main isolate.
-    sendPort?.send(timestamp);
+    sendPort?.send(_eventCount);
 
     _eventCount++;
-
-    if (kDebugMode) {
-      print('cicik');
-    }
-
   }
+
 
 
   @override
@@ -129,7 +128,7 @@ class MyTaskHandler extends TaskHandler {
   @override
   void onButtonPressed(String id) {
     // Called when the notification button on the Android platform is pressed.
-    print('onButtonPressed >> $id');
+    debugPrint('onButtonPressed >> $id');
   }
 
   @override
@@ -146,78 +145,54 @@ class MyTaskHandler extends TaskHandler {
     _sendPort?.send('onNotificationPressed');
   }
 }
-@pragma('vm:entry-point')
-void updateCallback() {
-  FlutterForegroundTask.setTaskHandler(SecondTaskHandler());
-}
-
-class SecondTaskHandler extends TaskHandler {
-  @override
-  Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {
-
-  }
-
-  @override
-  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
-    FlutterForegroundTask.updateService(
-      notificationTitle: 'SecondTaskHandler',
-      notificationText: timestamp.toString(),
-    );
-
-    // Send data to the main isolate.
-    sendPort?.send(timestamp);
-    Position position = await Geolocator.getCurrentPosition();
-    print("2Task ${position.longitude}\n ${position.latitude}");
-  }
-
-  @override
-  Future<void> onDestroy(DateTime timestamp, SendPort? sendPort) async {
-
-  }
-}
-void main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
 
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-      AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
-
-
-  //await LocalNoticeService().setup();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    print('App was detached!');
-  });
-initialization();
-  runApp(const MyApp());
-}
 Future initialization() async {
 
   await Future.delayed(const Duration(seconds: 3));
   FlutterNativeSplash.remove();
 }
+class WorkTrackerApp extends StatelessWidget {
+  const WorkTrackerApp({Key? key}) : super(key: key);
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
   @override
-  State<MyApp> createState() => MyAppState();
+  Widget build(BuildContext context) {
+    final user = UserDataProvider();
+
+    return MultiBlocProvider(
+              providers: [
+        BlocProvider<LoginCubit>(create: (_) => LoginCubit(user)),
+        BlocProvider<RegisterCubit>(create: (_) => RegisterCubit(user)),
+       BlocProvider<UsersBloc>(create: (_) => UsersBloc(MyAccountInitial())),
+      ],
+
+      child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+
+      initialRoute: '/',
+        routes: {
+          '/': (context) => const HomeScreen(),
+          '/userscreen': (context) => const UserScreen(),
+        },
+      ),
+    );
+  }
+}
+class HomeScreen extends StatefulWidget {
+
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  String? initialMessage;
-  final UserActionsProvider _userActionsProvider = UserActionsProvider();
-  LocationData? _locationData;
+class HomeScreenState extends State<HomeScreen> {
+  final SessionDataProvider _sessionDataProvider = SessionDataProvider();
+//String? _token;
 
-  late Timer timer;
-  late Position _currentPosition;
-  bool _resolved = false;
-  bool serviceEnabled = false;
-  ReceivePort? _receivePort;
 
   void _initForegroundTask() {
+
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'notification_channel_id',
@@ -229,7 +204,7 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         iconData: const NotificationIconData(
           resType: ResourceType.mipmap,
           resPrefix: ResourcePrefix.ic,
-          name: 'launcher',
+          name: 'clock',
           backgroundColor: Colors.orange,
         ),
       ),
@@ -238,13 +213,12 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
         playSound: false,
       ),
       foregroundTaskOptions: const ForegroundTaskOptions(
-        interval: 120000,
+        interval: 300000,
         isOnceEvent: false,
         autoRunOnBoot: true,
         allowWakeLock: true,
         allowWifiLock: true,
       ),
-
     );
   }
 
@@ -261,164 +235,68 @@ class MyAppState extends State<MyApp> with WidgetsBindingObserver {
       final isGranted =
       await FlutterForegroundTask.openSystemAlertWindowSettings();
       if (!isGranted) {
-        print('SYSTEM_ALERT_WINDOW permission denied!');
+        debugPrint('SYSTEM_ALERT_WINDOW permission denied!');
         return false;
       }
     }
 
     // You can save data using the saveData function.
-    await FlutterForegroundTask.saveData(key: 'customData', value: '');
-
-    bool reqResult;
+    await FlutterForegroundTask.saveData(key: 'customData', value: 'hello');
     if (await FlutterForegroundTask.isRunningService) {
-      reqResult = await FlutterForegroundTask.restartService();
+      return FlutterForegroundTask.restartService();
     } else {
-      reqResult = await FlutterForegroundTask.startService(
-        notificationTitle: 'Work is running',
+      return FlutterForegroundTask.startService(
+        notificationTitle: 'Foreground Service is running',
         notificationText: 'Tap to return to the app',
         callback: startCallback,
       );
     }
-
-    ReceivePort? receivePort;
-    if (reqResult) {
-      receivePort = await FlutterForegroundTask.receivePort;
-    }
-
-    return _registerReceivePort(receivePort);
   }
 
-  Future<bool> stopForegroundTask() async {
-    return await FlutterForegroundTask.stopService();
+  Future<bool> stopForegroundTask() {
+    return FlutterForegroundTask.stopService();
   }
-
-  bool _registerReceivePort(ReceivePort? receivePort) {
-    _closeReceivePort();
-
-    if (receivePort != null) {
-      _receivePort = receivePort;
-      _receivePort?.listen((message) async {
-        if (message is int) {
-          print('eventCount: $message');
-        } else if (message is String) {
-          if (message == 'onNotificationPressed') {
-            Navigator.of(context,rootNavigator: true).push(MaterialPageRoute(builder: (_)=>const UserScreen()));
-          }
-        } else if (message is DateTime) {
-          print('timestamp: ${message.toString()}');
-        }
-      });
-
-      return true;
-    }
-
-    return false;
-  }
-
-  void _closeReceivePort() {
-    _receivePort?.close();
-    _receivePort = null;
-  }
-
-  T? _ambiguate<T>(T? value) => value;
 
   @override
   void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _handleLocationPermission();
     _initForegroundTask();
-    _ambiguate(WidgetsBinding.instance)?.addPostFrameCallback((_) async {
-      // You can get the previous ReceivePort without restarting the service.
-      if (await FlutterForegroundTask.isRunningService) {
-        final newReceivePort = await FlutterForegroundTask.receivePort;
-        _registerReceivePort(newReceivePort);
-      }
-    });
-  }
-  Future<void> initPlatformState() async {
-    Location location = new Location();
-    bool _serviceEnabled;
-    PermissionStatus _permissionGranted;
-
-    _serviceEnabled = await location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
-      if (!_serviceEnabled) {
-        return;
-      }
-    }
-
-    _permissionGranted = await location.hasPermission();
-    if (_permissionGranted == PermissionStatus.
-
-    denied) {
-      _permissionGranted = await location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    _locationData = await location.getLocation();
-    print(_locationData);
-  }
-
-  Future<bool> _handleLocationPermission() async {
-
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location services are disabled. Please enable the services')));
-      return false;
-    }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are denied')));
-        return false;
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location permissions are permanently denied, we cannot request permissions.')));
-      return false;
-    }
-    return true;
+    loginUser();
+    super.initState();
   }
 
 
+  Future<Widget> loginUser() async {
+    final isValid = await _sessionDataProvider.readsAccessToken() ?? '';
+    final isAUser = await _sessionDataProvider.readRole() ?? ' ';
 
-  Locale? _locale;
-      final user = UserPreferences.myUser;
+    if (isValid.isNotEmpty && isAUser.contains('true')) {
+      return const UserScreen();
+    }
+
+    if (isValid.isNotEmpty && isAUser.contains('false')) {
+      return const UsersScreen();
+    }
+
+    return const LoginScreen();
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final user = UserDataProvider();
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<LoginCubit>(create: (_) => LoginCubit(user)),
-        BlocProvider<RegisterCubit>(create: (_) => RegisterCubit(user)),
-       BlocProvider<UsersBloc>(create: (_) => UsersBloc(MyAccountInitial())),
-      ],
-      child:const MaterialApp(
-    debugShowCheckedModeBanner: false,
+    return WithForegroundTask(
+      child: Scaffold(
+        body: FutureBuilder<Widget>(
+          future: loginUser(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return snapshot.data!;
+            }
+            return const SizedBox();
+          },
+        )
 
-
-    home:  HomeScreen(),
-
-
-    ));
+      ),
+    );
   }
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _closeReceivePort();
-    super.dispose();
-  }
+
 }
-

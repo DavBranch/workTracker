@@ -20,18 +20,18 @@ class DatePickerBottomSheetModal extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _DatePickerBottomSheetModalState createState() =>
-      _DatePickerBottomSheetModalState();
+  DatePickerBottomSheetModalState createState() =>
+      DatePickerBottomSheetModalState();
 }
 
-class _DatePickerBottomSheetModalState
+class DatePickerBottomSheetModalState
     extends State<DatePickerBottomSheetModal> {
   DateTime? _chosenDate;
   get _initialDate {
-    return widget.answer != null ? widget.answer : DateTime.now();
+    return widget.answer ?? DateTime.now();
   }
 
-  void handleDate(DateTime date) {
+  void handleDate(DateTime? date) {
     if (date != null) {
       _chosenDate = date;
     }
@@ -65,104 +65,102 @@ class _DatePickerBottomSheetModalState
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Container(
-            height: 56,
-            width: MediaQuery.of(context).size.width,
-            color: Colors.white,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                GestureDetector(
-                  onTap: () {
-                    widget.clearDateTime!();
-                    //  widget.getBorderColor(null);
-                    Navigator.of(context).pop();
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(left: 24),
-                    child: Text(
-                      'Clear',
-                      style: TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF212121),
-                        letterSpacing: 0.2,
-                        decoration: TextDecoration.none,
-                      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          height: 56,
+          width: MediaQuery.of(context).size.width,
+          color: Colors.white,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              GestureDetector(
+                onTap: () {
+                  widget.clearDateTime!();
+                  //  widget.getBorderColor(null);
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(left: 24),
+                  child: const Text(
+                    'Clear',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
+                      letterSpacing: 0.2,
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 ),
-                Container(
-                  height: 36,
-                  width: 72,
-                  margin: EdgeInsets.only(right: 16),
-                  decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Color(0xFF2DB342),
-                        width: 2.0,
-                        style: BorderStyle.solid,
-                      ),
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Material(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
-                    child: InkWell(
-                      onTap: () {
-                        if (_chosenDate != null) {
-                          widget.changeDateTime!(_chosenDate);
-                          Navigator.of(context).pop();
-                        } else {
-                          _chosenDate = getInitialDate();
-                          // _chosenDate = widget.answer ??
-                          //     DateTime.parse('${DateFormat('MMMM d, y').format(DateTime.now())} at ${DateFormat('HH:mm').format(DateTime.now())}');
-                          widget.changeDateTime!(_chosenDate);
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: Center(
-                        child: Text(
-                          'Done',
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2DB342),
-                            letterSpacing: 0.2,
-                            decoration: TextDecoration.none,
-                          ),
+              ),
+              Container(
+                height: 36,
+                width: 72,
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFF2DB342),
+                      width: 2.0,
+                      style: BorderStyle.solid,
+                    ),
+                    borderRadius: BorderRadius.circular(8)),
+                child: Material(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                  child: InkWell(
+                    onTap: () {
+                      if (_chosenDate != null) {
+                        widget.changeDateTime!(_chosenDate);
+                        Navigator.of(context).pop();
+                      } else {
+                        _chosenDate = getInitialDate();
+                        // _chosenDate = widget.answer ??
+                        //     DateTime.parse('${DateFormat('MMMM d, y').format(DateTime.now())} at ${DateFormat('HH:mm').format(DateTime.now())}');
+                        widget.changeDateTime!(_chosenDate);
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const Center(
+                      child: Text(
+                        'Done',
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2DB342),
+                          letterSpacing: 0.2,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                     ),
                   ),
-                )
-              ],
-            ),
+                ),
+              )
+            ],
           ),
-          Container(
-            height: 160,
-            width: MediaQuery.of(context).size.width,
-            color: Colors.white,
-            child: CupertinoDatePicker(
-              initialDateTime: getInitialDate(),
-              onDateTimeChanged: (DateTime newDate) {
-                handleDate(newDate);
-              },
-              use24hFormat: true,
-              maximumDate: widget.maximumDate,
-              minimumYear: 1990,
-              maximumYear: 2050,
-              minimumDate: widget.minimumDate,
-              minuteInterval: 1,
-              mode: widget.mode,
-            ),
-          )
-        ],
-      ),
+        ),
+        Container(
+          height: 160,
+          width: MediaQuery.of(context).size.width,
+          color: Colors.white,
+          child: CupertinoDatePicker(
+            initialDateTime: getInitialDate(),
+            onDateTimeChanged: (DateTime newDate) {
+              handleDate(newDate);
+            },
+            use24hFormat: true,
+            maximumDate: widget.maximumDate,
+            minimumYear: 1990,
+            maximumYear: 2050,
+            minimumDate: widget.minimumDate,
+            minuteInterval: 1,
+            mode: widget.mode,
+          ),
+        )
+      ],
     );
   }
 }

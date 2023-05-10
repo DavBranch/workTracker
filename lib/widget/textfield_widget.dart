@@ -15,10 +15,10 @@ class TextFieldWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _TextFieldWidgetState createState() => _TextFieldWidgetState();
+  TextFieldWidgetState createState() => TextFieldWidgetState();
 }
 
-class _TextFieldWidgetState extends State<TextFieldWidget> {
+class TextFieldWidgetState extends State<TextFieldWidget> {
   late final TextEditingController controller;
 
   @override
@@ -41,7 +41,7 @@ class _TextFieldWidgetState extends State<TextFieldWidget> {
         children: [
           Text(
             widget.label,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 8),
           TextField(
