@@ -75,9 +75,9 @@ class SheetContainerBodyState extends State<SheetContainerBody> {
        );
      }).toList(),
      onChanged: (String? newValue) {
-
+      dropdownvalue  = newValue!;
        setState(() {
-        _userRoleChange(newValue?.toLowerCase());
+        _userRoleChange(newValue.toLowerCase());
        });
      },
    );
