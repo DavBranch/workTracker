@@ -86,6 +86,12 @@ String  userStatusInfo(){
               _buildColumn('Date', DateFormat('yyyy-MM-dd').format(DateTime.parse('${widget.userInfo.date}'))),
             ],
           ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              _buildColumn('Duration', '${widget.userInfo.duration}'),
+            ],
+          ),
           if(widget.userInfo.times != null) for (var time in widget.userInfo!.times!)
             Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

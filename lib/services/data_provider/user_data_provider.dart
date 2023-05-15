@@ -308,9 +308,10 @@ class UserDataProvider {
         );
         var body = json.decode(response.body);
         var success = body['status'];
-        var datas = body['data'];
+        var data = body['data'];
         if (success == true) {
-          var user = List.from(datas).where((element) => element['role'] == 'user').toList().map((e) => User.fromJson(e)).toList();
+
+          var user = List.from(data).toList().map((e) => User.fromJson(e)).toList();
 
           return user;
         } else {

@@ -63,6 +63,7 @@ class HistoryInfoScreenSheetModalState extends State<HistoryInfoScreenSheetModal
 
         appBar: AppBar(
           title: Text('User Info'),
+          backgroundColor: Colors.blueAccent,
         ),
         body: Stack(
           children: <Widget>[
