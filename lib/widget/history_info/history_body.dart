@@ -25,10 +25,7 @@ class HistorySheetContainerBody extends StatefulWidget {
 class HistorySheetContainerBodyState extends State<HistorySheetContainerBody> {
   final Completer<GoogleMapController> _controller = Completer();
 
-  static const CameraPosition _kGooglePlex = CameraPosition(
-    target: LatLng(40.4018, 44.6434),
-    zoom: 15,
-  );
+  static late CameraPosition? _kGooglePlex;
 
  final  _markers = <Marker>[];
 
@@ -39,7 +36,10 @@ String  userStatusInfo(){
   @override
   void initState() {
     super.initState();
-
+    _kGooglePlex =    CameraPosition(
+      target: widget.positions![1],
+      zoom: 15,
+    );
     _markers.addAll( [
       if(widget.userInfo.endLocation == null )  Marker(
         markerId: const MarkerId('1'),
@@ -86,6 +86,12 @@ String  userStatusInfo(){
               _buildColumn('Date', DateFormat('yyyy-MM-dd').format(DateTime.parse('${widget.userInfo.date}'))),
             ],
           ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              _buildColumn('Duration', '${widget.userInfo.duration}'),
+            ],
+          ),
           if(widget.userInfo.times != null) for (var time in widget.userInfo!.times!)
             Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -124,7 +130,10 @@ String  userStatusInfo(){
                   _controller.complete(controller);
                 },
                 myLocationEnabled: false,
-                initialCameraPosition: _kGooglePlex,
+                initialCameraPosition: _kGooglePlex ?? CameraPosition(
+                  target: widget.positions![1],
+                  zoom: 15,
+                ),
                 gestureRecognizers: Set()
                   ..add(
                     Factory<VerticalDragGestureRecognizer>(

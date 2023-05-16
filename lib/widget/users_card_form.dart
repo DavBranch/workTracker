@@ -83,27 +83,6 @@ void _onDelete({required List<User> users,required int index,required int userId
       context: context,
     ),));
     FocusScope.of(context).requestFocus(FocusNode());
-    // showModalBottomSheet(
-    //   isDismissible: true,
-    //   barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
-    //   elevation: 3,
-    //   useRootNavigator: true,
-    //   isScrollControlled: true,
-    //   enableDrag: true,
-    //   context: context,
-    //   builder: (newContext) => BlocProvider.value(
-    //     value: BlocProvider.of<UsersBloc>(context),
-    //     child: EditMyInfoBottomSheetModal(
-    //       firstName: user.firstName!,
-    //       lastName: user.lastName!,
-    //       userName: user.username!,
-    //       password: user.role!,
-    //       context: context,
-    //       isInfo: true,
-    //       id: user.id!,
-    //     ),
-    //   ),
-    // );
   }
   @override
   Widget build(BuildContext context) {

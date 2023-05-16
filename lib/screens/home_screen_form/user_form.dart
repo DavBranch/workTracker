@@ -26,21 +26,16 @@ class UserScreen extends StatefulWidget {
 class _UserScreenState extends State<UserScreen> {
   final UserActionsProvider _userActionsProvider = UserActionsProvider();
   final _isHours = true;
+  bool timerOn = false;
   final  _sessionDataProvider =  SessionDataProvider();
-  bool _backgroundTaskIsOff = false;
   late  String stopedTimerData ='';
-   bool serviceEnabled = false;
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(
     mode: StopWatchMode.countUp,
-    //onChange: (value) => print('onChange $value'),
-    onStopped: () {
-    },
-    onEnded: () {
-    },
   );
   Position? _currentPosition;
+  bool _isLocationEnabled = false;
+
   Future<void> _getCurrentPosition() async {
-    // Check if location permission is granted and request permission if necessary
     final permissionStatus = await Permission.location.request();
     if (permissionStatus.isGranted) {
       // permission is granted, get the location
@@ -51,13 +46,15 @@ class _UserScreenState extends State<UserScreen> {
             const LocationSettings(accuracy: LocationAccuracy.high));
         setState(() {
           _currentPosition = position;
+          _isLocationEnabled = true;
         });
       } catch (error) {
         print(error);
+        _isLocationEnabled = false;
       }
     } else if (permissionStatus.isDenied ||
         permissionStatus.isPermanentlyDenied) {
-      // permission is not granted or permanently denied, show an alert or dialog
+      _isLocationEnabled = false;
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
@@ -83,7 +80,10 @@ class _UserScreenState extends State<UserScreen> {
 
     LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    setState(() {
+      _isLocationEnabled = serviceEnabled;
+    });
     if (!serviceEnabled) {
       if(context.mounted){
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -144,7 +144,7 @@ class _UserScreenState extends State<UserScreen> {
       final dateNow = DateTime.now();
       final difference = parsedWorkTime.difference(dateNow).inMilliseconds;
       _stopWatchTimer.setPresetTime(mSec: difference.abs());
-      _stopWatchTimer.onStartTimer();
+      _startTimer();
     }
   }
   _removeData() async {
@@ -205,7 +205,8 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
               ): const SizedBox(),
-              _stopWatchTimer.isRunning?   Padding(
+
+              _stopWatchTimer.isRunning ?   Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child:ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.lightGreen ),
@@ -262,11 +263,15 @@ class _UserScreenState extends State<UserScreen> {
     ;
   }
 
-  void _startTimer() async {
-    _getCurrentPosition();
-    if (!serviceEnabled) return;
+  Future<void> _startTimer() async {
+    await _getCurrentPosition();
+
+    if (!_isLocationEnabled) {
+      return;
+    }
+
     if (!await FlutterForegroundTask.canDrawOverlays) {
-      if(context.mounted){
+      if (context.mounted) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -277,35 +282,43 @@ class _UserScreenState extends State<UserScreen> {
             actions: [
               TextButton(
                 child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
         ).then((value) => FlutterForegroundTask.openSystemAlertWindowSettings());
-      }      return;
+      }
+
+      return;
     }
-    setState(() {
-      HomeScreenState().startForegroundTask();
-    });
+
+    await HomeScreenState().startForegroundTask();
     _saveData();
     _stopWatchTimer.onStartTimer();
+
     if (_currentPosition != null && _stopWatchTimer.isRunning) {
-      UserLocation location = UserLocation(
-          lat: _currentPosition?.latitude.toString(),
-          lng: _currentPosition?.longitude.toString());
-      UserActions action =
-      UserActions(location: location, time: stopedTimerData, type: 'start');
+      final location = UserLocation(
+        lat: _currentPosition!.latitude.toString(),
+        lng: _currentPosition!.longitude.toString(),
+      );
+
+      final action = UserActions(
+        location: location,
+        time: stopedTimerData,
+        type: 'start',
+      );
+
       _userActionsProvider.fetchUserActions(action);
     }
   }
 
-  void _stopTimer()async{
-    _getCurrentPosition();
-    if (!serviceEnabled) return;
+
+  Future<void> _stopTimer() async {
+    await _getCurrentPosition();
+    if (!_isLocationEnabled) return;
+
     if (!await FlutterForegroundTask.canDrawOverlays) {
-      if(context.mounted){
+      if (context.mounted) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -316,30 +329,32 @@ class _UserScreenState extends State<UserScreen> {
             actions: [
               TextButton(
                 child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
         );
-      }      return;
+      }
+      return;
     }
 
-    setState(() {
-      HomeScreenState().stopForegroundTask();
-    });
+    await HomeScreenState().stopForegroundTask();
     _removeData();
     _stopWatchTimer.onStopTimer();
-    if (_currentPosition != null && _stopWatchTimer.isRunning) {
-      UserLocation location = UserLocation(
-          lat: _currentPosition?.latitude.toString(),
-          lng: _currentPosition?.longitude.toString());
-      UserActions action =
-      UserActions(location: location, time: stopedTimerData, type: 'end');
+
+    if (_currentPosition != null && !_stopWatchTimer.isRunning) {
+      final location = UserLocation(
+          lat: _currentPosition!.latitude.toString(),
+          lng: _currentPosition!.longitude.toString());
+      final action = UserActions(
+        location: location,
+        time: stopedTimerData,
+        type: 'end',
+      );
       _userActionsProvider.fetchUserActions(action);
     }
   }
+
   void _handleClick(int item) {
     switch (item) {
       case 0:

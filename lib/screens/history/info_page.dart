@@ -102,13 +102,6 @@ class _MyPageState extends State<MyPage> {
                         child: Card(
                           child: Container(
                             padding: EdgeInsets.symmetric(horizontal: 10),
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                top: BorderSide(
-                                    width: 2.0, color: Colors.black),
-                              ),
-                              color: Colors.white,
-                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [

@@ -17,12 +17,10 @@ class SheetContainerBody extends StatefulWidget {
   final Function? pushEditedRole;
   final Function? pushEditedPassword;
   final bool? isInfo;
-  final User? users;
   final Function()? saveChanges;
   const SheetContainerBody({
     Key? key,
     this.isInfo,
-     this.users,
     this.saveChanges,
     required this.user,
     this.pushEditedPassword,
@@ -64,6 +62,7 @@ class SheetContainerBodyState extends State<SheetContainerBody> {
     'Admin',
   ];
 
+
  Widget roleDropDownMenu(){
   return DropdownButton(
      value: dropdownvalue,
@@ -75,9 +74,9 @@ class SheetContainerBodyState extends State<SheetContainerBody> {
        );
      }).toList(),
      onChanged: (String? newValue) {
-
+      dropdownvalue  = newValue!;
        setState(() {
-        _userRoleChange(newValue?.toLowerCase());
+        _userRoleChange(newValue.toLowerCase());
        });
      },
    );
@@ -86,6 +85,7 @@ class SheetContainerBodyState extends State<SheetContainerBody> {
   @override
   void initState() {
     super.initState();
+  if(widget.user?.role == 'admin')dropdownvalue = 'Admin';
     _userNameFocusNode = FocusNode();
     _lastNameFocusNode = FocusNode();
     _firstNameFocusNode = FocusNode();
