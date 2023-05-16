@@ -4,11 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:worktracker/screens/users/users.dart';
 import 'package:worktracker/services/blocs/user/user_event.dart';
 import 'package:worktracker/services/blocs/user/user_state.dart';
-import 'package:worktracker/utils/user_preferences.dart';
-import 'package:worktracker/services/blocs/user/user_event.dart';
-import 'package:worktracker/services/blocs/user/user_state.dart';
-
-import '../../../screens/users/users.dart';
 import '../../data_provider/user_data_provider.dart';
 import '../../models/user.dart';
 
@@ -34,9 +29,9 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
   Stream<EditUserState> _mapFetchMyAccountToState(FetchMyAccount event) async* {
     yield MyAccountLoading();
 
-    final List<User> myAccountData = await _myAccountRepository.getUser() ;
+    final  myAccountData = await _myAccountRepository.getUser() ;
     final users =myAccountData;
-    if (users != null) {
+    if (users.isNotEmpty) {
       yield MyAccountLoaded(
       listUsers: users,
       );
@@ -45,50 +40,8 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
     }
   }
     Stream<EditUserState> _mapEditMyAccountToState(EditMyUser event) async* {
-    // yield const MyAccountLoaded();
-    //   if (event.firstName != null || event.lastName != null ||
-    //       event.userName != null || event.id !=null) {
-    //     final currentState = state;
-    //
-    //     if (currentState is MyAccountLoaded) {
-    //       yield currentState.copyWith(updateMyAccountInProgress: true);
-    //     }
-    //
-    //    final User? user = await _myAccountRepository.updateUser(
-    //      userName: event.userName,
-    //      lastName: event.lastName,
-    //      firstName: event.firstName,
-    //      id: event.id,
-    //    );
-    //
-    //     // if (myAccountData['errors'] == null) {
-    //     //   // final User myAccountData = await _myAccountRepository
-    //     //   //     .fetchMyAccount();
-    //     //
-    //      if (event.firstName!=null) {
-    //         if (currentState is MyAccountLoaded) {
-    //        if(user!=null) {
-    //          yield currentState.copyWith(
-    //               listUsers: [user],
-    //               updateMyAccountInProgress: true
-    //           );
-    //        }
-    //         }
-    //
-    //         try {
-    //           Navigator.of(event.context!, rootNavigator: true).pop('dialog');
-    //         } catch (e) {
-    //           print(e);
-    //         }
-    //       // }
-    //     } else {
-    //     Navigator.pop(event.context!);
-    //       add(EditMyAccountFailure());
-    //     }
-    //   } else {
-    //     // Navigator.pop(event.context);
-    //   }
-      if (event.firstName != null || event.lastName != null || event.userName != null) {
+      if (event.user.username!.isNotEmpty ||event.user.firstName!.isNotEmpty  || event.user.lastName!.isNotEmpty
+      || event.user.role!.isNotEmpty || event.user.password!.isNotEmpty  ) {
         final currentState = state;
 
         if (currentState is MyAccountLoaded) {
@@ -96,31 +49,33 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
         }
 
         final Map myAccountData = await _myAccountRepository.updateMyAccountFromApi(
-          firstName: event.firstName,
-          lastName: event.lastName,
-          jobTitle: event.userName,
-          id: event.id,
+          firstName: event.user.firstName,
+          lastName: event.user.lastName,
+          userName:event.user.username,
+          role:event.user.role ,
+          password: event.user.password,
+          id:  event.user.id,
         );
 
         if (myAccountData['errors'] == null) {
-          final User myAccountData = await _myAccountRepository.getUserById(2.toString());
+          final User myAccountData = await _myAccountRepository.getUserById(event.user.id.toString());
 
-          if (myAccountData != null) {
-            if (currentState is MyAccountLoaded) {
-              yield currentState.copyWith(
-                  listUsers: [myAccountData],
-              );
-            }
+          if (currentState is MyAccountLoaded) {
+            yield currentState.copyWith(
+                listUsers: [myAccountData],
+            );
+          }
 
-            try{
-              Navigator.of(event.context!).pushAndRemoveUntil(
+          try{
+            Navigator.of(event.context!).pushAndRemoveUntil(
 
-                  MaterialPageRoute(
-                      builder: (context) =>
-                      const UsersScreen()),
-                      (Route<dynamic> route) =>
-                  false);
-            } catch(e) {}
+                MaterialPageRoute(
+                    builder: (context) =>
+                    const UsersScreen()),
+                    (Route<dynamic> route) =>
+                false);
+          } catch(e) {
+            debugPrint('$e');
           }
         } else {
           Navigator.pop(event.context!);
@@ -142,61 +97,3 @@ class UsersBloc extends Bloc<MyAccountEvent, EditUserState> {
       }
     }
   }
-
-
-
-// import 'package:bloc/bloc.dart';
-// import 'package:work_timing/services/blocs/user/user_event.dart';
-// import 'package:work_timing/services/blocs/user/user_state.dart';
-// import 'package:work_timing/services/data_provider/user_data_provider.dart';
-//
-// import '../../models/user.dart';
-//
-//
-//
-// class EditTodoBloc extends Bloc<EditUserEvent, EditUserState> {
-//   EditTodoBloc({
-//      UserDataProvider? userDataProvider,
-//      User? initialTodo,
-//   })  : _userDataProvider = userDataProvider!,
-//         super(
-//         EditUserState(
-//           initialTodo: initialTodo,
-//           email:initialTodo?.email?? '',
-//           fullName:initialTodo?.fullName?? '',
-//         ),
-//       ) {
-//     on<EditUser>(_onTitleChanged);
-//     on<EditUserSubmitted>(_onSubmitted);
-//   }
-//
-//   final UserDataProvider _userDataProvider;
-//
-//   void _onTitleChanged(
-//       EditUser event,
-//       Emitter<EditUserState> emit,
-//       ) {
-//     emit(state.copyWith(fullName: event.fullName,email: event.email));
-//   }
-//
-//
-//
-//   Future<void> _onSubmitted(
-//       EditUserSubmitted event,
-//       Emitter<EditUserState> emit,
-//       ) async {
-//     emit(state.copyWith(status: UserStatus.loading));
-//     final user = (state.initialTodo ?? const User(fullName: '')).copyWith(
-//       fullName: state.fullName,
-//       email: state.email,
-//
-//     );
-//
-//     try {
-//     await _userDataProvider.saveFavorite(user);
-//       emit(state.copyWith(status: UserStatus.success));
-//     } catch (e) {
-//       emit(state.copyWith(status: UserStatus.failure));
-//     }
-//   }
-// }

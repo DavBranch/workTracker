@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:formz/formz.dart';
 
 import '../../fileds_validations/email.dart';
@@ -29,10 +30,10 @@ class LoginState extends Equatable {
     bool? isUser,
     String? errorMessage,
   }) {
-    print("from Login State : $status");
+    debugPrint("from Login State : $status");
     return LoginState(
       isUser: isUser ?? this.isUser,
-      userName: email ?? this.userName,
+      userName: email ?? userName,
       password: password ?? this.password,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,

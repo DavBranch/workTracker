@@ -1,17 +1,13 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:intl/intl.dart';
-import 'package:worktracker/base_data/base_api.dart';
 import 'package:worktracker/screens/history/history_info_screen.dart';
 import 'package:worktracker/services/data_provider/user_data_provider.dart';
 
 import '../../date_range/date_range_bottom_sheet_modal.dart';
 import '../../services/blocs/user/user_bloc.dart';
-import '../../services/models/user.dart';
+import '../../services/models/info.dart';
 import '../../services/models/user_info.dart';
-import '../info_screen/info_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -31,12 +27,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   bool _hasDate = false;
   Map<String,String> _date={};
-  String _currentAddress ='';
+  final String _currentAddress ='';
 
   @override
   void initState() {
    date = formatter.format(now);
-    _futureUsers = _userDataProvider.getUserInfo(firstCall: 'https://phplaravel-885408-3069483.cloudwaysapps.com/api/info?date');
+    _futureUsers = _userDataProvider.getUserInfo(firstCall: 'http://165.227.204.177/api/info?date');
     super.initState();
   }
 
@@ -88,7 +84,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           itemBuilder: (context, index) {
                             UserInfo? user = snapshot.data![index];
                             return GestureDetector(
-                              onTap: ()=>_openInfoWidthMap(context,user,true),
+                              onTap: ()=>_openInfoWidthMap(context,Datum(),true),
                               child: IntrinsicHeight(
                                 child: Container(
                                   padding: const EdgeInsets.fromLTRB(
@@ -123,8 +119,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                                 Expanded(child:Column(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                    Text('Date : ${DateFormat('yyyy-MM-dd').format(user.date!) ?? ''}'),
-                                                    Text('Start Location : ${_currentAddress ?? ''}'),
+                                                    Text('Date : ${DateFormat('yyyy-MM-dd').format(user.date!)}'),
+                                                    Text('Start Location : $_currentAddress'),
                                                   ],
                                                 ),),
 
@@ -167,9 +163,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
  }
   Future<void> _pullRefresh() async {
-     final DateTime now = DateTime. now();
-     final DateFormat formatter = DateFormat('yyyy-MM-dd');
-    final String newDate = formatter. format(now);
+     //final DateTime now = DateTime. now();
+     //final DateFormat formatter = DateFormat('yyyy-MM-dd');
+    //final String newDate = formatter. format(now);
     List<UserInfo> freshNumbers = await _userDataProvider.getUserInfo(firstCall: 'https://phplaravel-885408-3069483.cloudwaysapps.com/api/info?date=');
     setState(() {
       _futureUsers = Future.value(freshNumbers);
@@ -179,7 +175,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     showModalBottomSheet(
         isDismissible: true,
-        barrierColor: Color(0xFFF5F6F6).withOpacity(0.7),
+        barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
         elevation: 3,
         useRootNavigator: true,
         isScrollControlled: true,
@@ -187,7 +183,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         builder: (_)=>DateRangeBottomSheetModal( ctx: context,dateRangePost:(hasData,date)=>setState((){
           _hasDate = hasData;
           if(hasData)_date=date;
-          print(date);
         }),onDateReset: (reset)=> setState((){
           _hasDate = reset;
           _date = {};
@@ -199,29 +194,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
     return _hasDate;
   }
-  String _getAddressFromLtng({String? lat,String? long}) {
-    Future.delayed(const Duration(milliseconds: 800),(){
-      placemarkFromCoordinates(
-          double.parse("40.1872"), double.parse("44.5152"))
-          .then((List<Placemark> placemarks) {
-        Placemark place = placemarks[0];
-        setState(() {
-          _currentAddress =
-          '${place.street}, ${place.subLocality}, ${place.subAdministrativeArea}, ${place.postalCode}';
-        });
-      }).catchError((e) {
-        debugPrint(e);
-      });
-    });
-
-    return _currentAddress;
-  }
+  // String _getAddressFromLtng({String? lat,String? long}) {
+  //   Future.delayed(const Duration(milliseconds: 800),(){
+  //     placemarkFromCoordinates(
+  //         double.parse("40.1872"), double.parse("44.5152"))
+  //         .then((List<Placemark> placemarks) {
+  //       Placemark place = placemarks[0];
+  //       setState(() {
+  //         _currentAddress =
+  //         '${place.street}, ${place.subLocality}, ${place.subAdministrativeArea}, ${place.postalCode}';
+  //       });
+  //     }).catchError((e) {
+  //       debugPrint(e);
+  //     });
+  //   });
+  //
+  //   return _currentAddress;
+  // }
   void _openInfoWidthMap(
-      BuildContext context,UserInfo user ,bool isinfo) {
+      BuildContext context,Datum user ,bool isinfo) {
     FocusScope.of(context).requestFocus(FocusNode());
     showModalBottomSheet(
       isDismissible: false,
-      barrierColor: Color(0xFFF5F6F6).withOpacity(0.7),
+      barrierColor: const Color(0xFFF5F6F6).withOpacity(0.7),
       elevation: 3,
       useRootNavigator: true,
       isScrollControlled: true,
@@ -230,13 +225,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (newContext) => BlocProvider.value(
         value: BlocProvider.of<UsersBloc>(context),
         child: HistoryInfoScreenSheetModal(
-          firstName: user.startTime.toString() ?? 'none',
-          lastName: user.endTime.toString() ?? 'none',
-          userName: user.userId.toString() ?? 'none',
-          password: user.endTime.toString() ?? 'none',
-
-          context: context,
-          id: user.id??0,
+         userInfo: user,
           updateMyAccountInProgress: false,
         ),
       ),

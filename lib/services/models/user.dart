@@ -21,6 +21,7 @@ class User {
     this.location,
     this.createdAt,
     this.updatedAt,
+    this.password,
   });
 
   int? id;
@@ -28,6 +29,7 @@ class User {
   String? firstName;
   String? lastName;
   String? username;
+  String? password;
   dynamic location;
   dynamic createdAt;
   dynamic updatedAt;

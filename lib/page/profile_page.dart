@@ -2,37 +2,31 @@ import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:flutter/material.dart';
 
 import '../services/models/user.dart';
-import '../utils/user_preferences.dart';
 import '../widget/appbar_widget.dart';
 import '../widget/button_widget.dart';
 import '../widget/numbers_widget.dart';
 
-class ProfilePage extends StatefulWidget {
-  @override
-  _ProfilePageState createState() => _ProfilePageState();
-}
-
-class _ProfilePageState extends State<ProfilePage> {
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
   @override
   Widget build(BuildContext context) {
-    final user = UserPreferences.myUser.first;
 
     return ThemeSwitchingArea(
       child: Builder(
         builder: (context) => Scaffold(
           appBar: buildAppBar(context),
           body: ListView(
-            physics: BouncingScrollPhysics(),
+            physics: const BouncingScrollPhysics(),
             children: [
 
               const SizedBox(height: 24),
-              buildName(user),
+              buildName(User(role: 'test',firstName: 'te',lastName:'st',username: 'dads',)),
               const SizedBox(height: 24),
               Center(child: buildUpgradeButton()),
               const SizedBox(height: 24),
-              NumbersWidget(),
+              const NumbersWidget(),
               const SizedBox(height: 48),
-              buildAbout(user),
+              buildAbout(User(role: 'test',firstName: 'te',lastName:'st',username: 'dads',)),
             ],
           ),
         ),
@@ -44,12 +38,12 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Text(
             user.firstName!,
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
           ),
           const SizedBox(height: 4),
           Text(
             user.username!,
-            style: TextStyle(color: Colors.grey),
+            style: const TextStyle(color: Colors.grey),
           )
         ],
       );
@@ -60,15 +54,15 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
   Widget buildAbout(User user) => Container(
-        padding: EdgeInsets.symmetric(horizontal: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 48),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+          children:const [
+             Text(
               'About',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+             SizedBox(height: 16),
 
           ],
         ),

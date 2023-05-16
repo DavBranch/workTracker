@@ -2,11 +2,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:location/location.dart';
-import 'package:worktracker/services/models/user.dart';
 import 'package:worktracker/services/models/user_info.dart';
 
 
@@ -39,13 +36,13 @@ class InfoSheetBody extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _InfoSheetBodyState createState() => _InfoSheetBodyState();
+  InfoSheetBodyState createState() => InfoSheetBodyState();
 }
 
-class _InfoSheetBodyState extends State<InfoSheetBody> {
+class InfoSheetBodyState extends State<InfoSheetBody> {
 
-  Completer<GoogleMapController> _controller = Completer();
-  Location _location = Location();
+  final Completer<GoogleMapController> _controller = Completer();
+ // Location _location = Location();
 
   static const CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(40.4018, 44.6434),
@@ -73,7 +70,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
     super.initState();
 
     loadData();
-  //  _markers.addAll(_list);
+    _markers.addAll(_list);
   }
   loadData() async{
     _latLen.addAll([
@@ -101,7 +98,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.startLocation?.lat);
+    debugPrint(widget.startLocation?.lat);
     return Scaffold(
       body: Container(
 
@@ -126,7 +123,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.firstName ?? '',
+                    Text(widget.firstName,
                       style: const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
@@ -153,7 +150,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.lastName ?? '',
+                    Text(widget.lastName,
                       style:const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
@@ -167,7 +164,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
                   ],),
               ],),
             // first name input
-            SizedBox(height: 20,),
+            const SizedBox(height: 20,),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -185,7 +182,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text(widget.userName ?? '',
+                    Text(widget.userName,
                       style: const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
@@ -212,7 +209,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
                       ),
                     ),
                     const SizedBox(height: 3),
-                    Text( DateFormat.yMMMd().format(DateTime.now())?? '',
+                    Text( DateFormat.yMMMd().format(DateTime.now()),
                       style: const TextStyle(
                         fontFamily: 'Roboto',
                         decoration: TextDecoration.none,
@@ -300,7 +297,7 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
               ),
             ),
             const SizedBox(height: 15),
-            if(widget?.currentLocation !=null || widget?.startLocation != null || widget?.endLocation != null )
+            if(widget.currentLocation !=null || widget.startLocation != null || widget.endLocation != null )
               SizedBox(
                 height: 400,
                 width: MediaQuery.of(context).size.width,
@@ -320,8 +317,8 @@ class _InfoSheetBodyState extends State<InfoSheetBody> {
 
                 ),),
 
-            SizedBox(height: 10
-            ),SizedBox(height: 30,)
+            const SizedBox(height: 10
+            ),const SizedBox(height: 30,)
           ],
         ),
       ),

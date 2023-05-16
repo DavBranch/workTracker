@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DeleteButton extends StatelessWidget {
-  final Function() onDelete;
+  final Function()? onDelete;
 
   const DeleteButton({super.key,
     required this.onDelete,
@@ -11,7 +11,7 @@ class DeleteButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Opacity(
       opacity: onDelete == null ? 0.5 : 1.0,
-      child: Container(
+      child: SizedBox(
         width: 36,
         height: 36  ,
         child: Material(

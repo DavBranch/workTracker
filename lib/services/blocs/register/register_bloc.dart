@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:formz/formz.dart';
 import 'package:worktracker/services/blocs/register/register_state.dart';
 
@@ -15,12 +16,11 @@ class RegisterCubit extends Cubit<RegisterState> {
   void fullaNameChanged(String value) {
     final firstName = FirstName.dirty(value);
     final lastName = LastName.dirty(value);
-    print("$firstName $lastName");
     emit(state.copyWith(
       firstName: firstName,
       status: Formz.validate([
-        lastName,
        firstName,
+        state.lastName,
         state.userName,
         state.password,
       ]),
@@ -41,7 +41,7 @@ class RegisterCubit extends Cubit<RegisterState> {
 
   void emailChanged(String value) {
     final email = UserName.dirty(value);
-    print(email);
+    debugPrint("$email");
     emit(state.copyWith(
       userName: email,
       status: Formz.validate([
@@ -55,12 +55,11 @@ class RegisterCubit extends Cubit<RegisterState> {
 
   void passwordChanged(String value) {
     final password = Password.dirty(value);
-    print(password);
     emit(state.copyWith(
       password: password,
       status: Formz.validate([
-        state.password,
         state.userName,
+        state.lastName,
         password,
       ]),
     ));
@@ -69,32 +68,33 @@ class RegisterCubit extends Cubit<RegisterState> {
     emit(state.copyWith(
       role: value,
       status: Formz.validate([
-        state.password,
         state.userName,
         state.lastName,
+        state.password,
       ]),
     ));
   }
 
 
   Future<void> signUpCredentials() async {
+    String isSuccess;
     if (!state.status.isValidated) return;
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
-      bool isSuccess = await _userDataProvider.signUp(
+      isSuccess  = await _userDataProvider.createUserWithNAmeEmailAndPassword(
         userName: state.userName.value,
         password: state.password.value,
         role: state.role!,
         firstName: state.firstName.value, lastName:state.lastName.value,
       );
 
-      if (isSuccess) {
+      if (isSuccess.isEmpty) {
         emit(state.copyWith(status: FormzStatus.submissionSuccess));
       } else {
-        emit(state.copyWith(status: FormzStatus.submissionFailure));
+        emit(state.copyWith(status: FormzStatus.submissionFailure,errorMessage: isSuccess));
       }
     } catch (e) {
-      emit(state.copyWith(status: FormzStatus.submissionFailure));
+      emit(state.copyWith(status: FormzStatus.submissionFailure,errorMessage: 'An error occurred while creating the user.'));
     }
   }
 }

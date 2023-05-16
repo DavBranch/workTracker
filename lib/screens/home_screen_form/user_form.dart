@@ -1,18 +1,21 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
-import 'package:worktracker/main.dart';
 import 'package:worktracker/screens/Login/login_screen.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
 import 'package:worktracker/services/data_provider/users_info_api.dart';
 import 'package:worktracker/services/models/user_actions.dart';
 
-import '../../utils/notification_service.dart';
+import '../../main.dart';
+import '../../services/blocs/login/login_bloc.dart';
+
 class UserScreen extends StatefulWidget {
   const  UserScreen({Key? key}) : super(key: key);
 
@@ -23,33 +26,53 @@ class UserScreen extends StatefulWidget {
 class _UserScreenState extends State<UserScreen> {
   final UserActionsProvider _userActionsProvider = UserActionsProvider();
   final _isHours = true;
+  bool timerOn = false;
   final  _sessionDataProvider =  SessionDataProvider();
-  bool _backgroundTaskIsOff = false;
   late  String stopedTimerData ='';
-   bool serviceEnabled = false;
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(
     mode: StopWatchMode.countUp,
-    //onChange: (value) => print('onChange $value'),
-    onStopped: () {
-      print('onStop');
-    },
-    onEnded: () {
-      print('onEnded');
-    },
   );
-  String? _currentAddress;
   Position? _currentPosition;
+  bool _isLocationEnabled = false;
 
-  Future<void> _getCurrentPosition()async {
-    final hasPermission = await _handleLocationPermission();
-
-    if (!hasPermission) return;
-    await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
-        .then((Position position) {
-      setState(() => _currentPosition = position);
-    }).catchError((e) {
-      debugPrint(e);
-    });
+  Future<void> _getCurrentPosition() async {
+    final permissionStatus = await Permission.location.request();
+    if (permissionStatus.isGranted) {
+      // permission is granted, get the location
+      try {
+        final geolocator = GeolocatorPlatform.instance;
+        final position = await geolocator.getCurrentPosition(
+            locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high));
+        setState(() {
+          _currentPosition = position;
+          _isLocationEnabled = true;
+        });
+      } catch (error) {
+        print(error);
+        _isLocationEnabled = false;
+      }
+    } else if (permissionStatus.isDenied ||
+        permissionStatus.isPermanentlyDenied) {
+      _isLocationEnabled = false;
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Location Permission'),
+          content: const Text('Please enable location services all the time'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () => openAppSettings(),
+              child: const Text('SETTINGS'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
 
@@ -57,26 +80,38 @@ class _UserScreenState extends State<UserScreen> {
 
     LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    setState(() {
+      _isLocationEnabled = serviceEnabled;
+    });
     if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location services are disabled. Please enable the services')));
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Location services are disabled. Please enable the services')));
+      }
+
       return false;
     }
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are denied')));
+        if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')));
+        }
+
         return false;
       }
     }
     if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      if(context.mounted){
+
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text(
-              'Location permissions are permanently denied, we cannot request permissions.')));
+              'Location permissions are permanently denied, we cannot request permissions.')));}
+
       return false;
     }
     return true;
@@ -101,28 +136,24 @@ class _UserScreenState extends State<UserScreen> {
     );
     super.initState();
   }
-   _loadData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String savedWorkTime = prefs.getString("work_time") ?? "";
-    if(savedWorkTime.isNotEmpty){
-      var parsedWorkTime= DateTime.parse(savedWorkTime);
-      DateTime dateNow = DateTime.now();
-      int difference = parsedWorkTime.difference(dateNow).inMilliseconds;
-
+  _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedWorkTime = prefs.getString('work_time') ?? '';
+    if (savedWorkTime.isNotEmpty) {
+      final parsedWorkTime = DateTime.parse(savedWorkTime);
+      final dateNow = DateTime.now();
+      final difference = parsedWorkTime.difference(dateNow).inMilliseconds;
       _stopWatchTimer.setPresetTime(mSec: difference.abs());
-      _stopWatchTimer.onStartTimer();
+      _startTimer();
     }
-   
-
   }
-  _removeData()async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove("work_time");
-
+  _removeData() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove('work_time');
   }
   _saveData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString("work_time", DateTime.now().toString());
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('work_time', DateTime.now().toString());
   }
   @override
   void dispose() async {
@@ -131,23 +162,17 @@ class _UserScreenState extends State<UserScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    
+
     return SafeArea(child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
+          backgroundColor: Colors.blueAccent,
           elevation: 0.0,title:const Text('Working Time'),
           actions: [
             PopupMenuButton<int>(
               onSelected: (item) => _handleClick(item),
               itemBuilder: (context) => [
-
-                PopupMenuItem<int>(value: 2, child: GestureDetector(
-                    onTap: (){
-                      _sessionDataProvider.deleteAllToken();
-
-                      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
-                          LoginScreen()), (Route<dynamic> route) => false);                    },
-                    child: const Text('Logout'))),
+              const   PopupMenuItem<int>(value: 0, child:  Text('Logout')),
 
 
               ],
@@ -173,43 +198,20 @@ class _UserScreenState extends State<UserScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlue ),
 
-                  onPressed: ()async{
-                   await _getCurrentPosition();
-                  // MyAppState().startForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
-                   if(serviceEnabled){
-                      _saveData();
-                      _stopWatchTimer.onStartTimer();
-                      if(_currentPosition != null && _stopWatchTimer.isRunning){
-                        UserLocation  location = UserLocation(lat: _currentPosition?.latitude.toString(), lng: _currentPosition?.longitude.toString(), );
-                        UserActions action = UserActions(location: location,time: stopedTimerData,type: 'start');
-                          _userActionsProvider.fetchUserActions(action);
-
-                      }
-                    }
-                  },
+                  onPressed: _startTimer,
                   child: const Text(
                     'Start',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
               ): const SizedBox(),
-              _stopWatchTimer.isRunning?   Padding(
+
+              _stopWatchTimer.isRunning ?   Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child:ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.lightGreen ),
 
-                  onPressed: ()async{
-                    _stopWatchTimer.onStopTimer();
-                    //MyAppState().stopForegroundTask().then((value) => setState(() =>_backgroundTaskIsOff = value),);
-                    UserLocation  location = UserLocation(lat: _currentPosition?.latitude.toString(), lng: _currentPosition?.longitude.toString(), );
-                    await  _getCurrentPosition();
-                    if( !_stopWatchTimer.isRunning ){
-                      _removeData();
-                      UserActions action = UserActions(location: location,time: stopedTimerData,type: 'end');
-                      await  _userActionsProvider.fetchUserActions(action);
-
-                    }
-                  },
+                  onPressed:_stopTimer,
                   child: const Text(
                     'Stop',
                     style: TextStyle(color: Colors.white),
@@ -260,13 +262,106 @@ class _UserScreenState extends State<UserScreen> {
     )
     ;
   }
+
+  Future<void> _startTimer() async {
+    await _getCurrentPosition();
+
+    if (!_isLocationEnabled) {
+      return;
+    }
+
+    if (!await FlutterForegroundTask.canDrawOverlays) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permission Required'),
+            content: const Text(
+              'The app needs the SYSTEM_ALERT_WINDOW permission to function properly. Please grant the permission in the app settings.',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ).then((value) => FlutterForegroundTask.openSystemAlertWindowSettings());
+      }
+
+      return;
+    }
+
+    await HomeScreenState().startForegroundTask();
+    _saveData();
+    _stopWatchTimer.onStartTimer();
+
+    if (_currentPosition != null && _stopWatchTimer.isRunning) {
+      final location = UserLocation(
+        lat: _currentPosition!.latitude.toString(),
+        lng: _currentPosition!.longitude.toString(),
+      );
+
+      final action = UserActions(
+        location: location,
+        time: stopedTimerData,
+        type: 'start',
+      );
+
+      _userActionsProvider.fetchUserActions(action);
+    }
+  }
+
+
+  Future<void> _stopTimer() async {
+    await _getCurrentPosition();
+    if (!_isLocationEnabled) return;
+
+    if (!await FlutterForegroundTask.canDrawOverlays) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permission Required'),
+            content: const Text(
+              'The app needs the SYSTEM_ALERT_WINDOW permission to function properly. Please grant the permission in the app settings.',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    await HomeScreenState().stopForegroundTask();
+    _removeData();
+    _stopWatchTimer.onStopTimer();
+
+    if (_currentPosition != null && !_stopWatchTimer.isRunning) {
+      final location = UserLocation(
+          lat: _currentPosition!.latitude.toString(),
+          lng: _currentPosition!.longitude.toString());
+      final action = UserActions(
+        location: location,
+        time: stopedTimerData,
+        type: 'end',
+      );
+      _userActionsProvider.fetchUserActions(action);
+    }
+  }
+
   void _handleClick(int item) {
     switch (item) {
       case 0:
-        break;
-      case 1:
-        break;
-      case 2:
+        _sessionDataProvider.deleteAllToken();
+        context.read<LoginCubit>().logOut();
+        Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) =>
+        const LoginScreen()), (Route<dynamic> route) => false);
         break;
     }
   }

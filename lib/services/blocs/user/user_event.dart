@@ -28,6 +28,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+import '../../models/user.dart';
+
 abstract class MyAccountEvent extends Equatable {
   const MyAccountEvent();
 
@@ -41,22 +43,16 @@ class FetchMyAccount extends MyAccountEvent {
 class RefreshMyAccount extends MyAccountEvent {}
 
 class EditMyUser extends MyAccountEvent {
-  final String firstName;
-  final String lastName;
-  final String userName;
-  final int id;
+  final User user;
   final BuildContext? context;
-
   const EditMyUser({
-   required  this.firstName,
-    required this.lastName,
-    required  this.userName,
-    required this.id,
+   required  this.user,
+
     required this.context
   });
 
   @override
-  List<Object> get props => [ lastName, userName,firstName,id];
+  List<Object> get props => [ user,];
 }
 
 class EditMyAccountInProgress extends MyAccountEvent {}

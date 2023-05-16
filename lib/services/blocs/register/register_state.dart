@@ -36,7 +36,6 @@ class RegisterState extends Equatable {
     FormzStatus? status,
     String? errorMessage,
   }) {
-    print("from Login State : $status");
     return RegisterState(
       firstName: firstName ?? this.firstName,
       lastName: lastName??this.lastName,

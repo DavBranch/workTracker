@@ -1,5 +1,8 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../base_data/base_api.dart';
 import '../widget/date_field_widget/date_filed_widget.dart';
 
 class DateRangeBottomSheetModal extends StatefulWidget {
@@ -19,7 +22,26 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
   String? _startDate;
   String? _endDate;
 
+  Future<void> fetchData(String startDate) async {
 
+try{
+
+  final headers = {
+    'Content-Type': 'application/json',
+  };
+  final response = await http.post(Uri.parse(Api.allInfo(startDate)), headers: headers,);
+  if (response.statusCode == 200) {
+
+    debugPrint('success response');
+  } else {
+    debugPrint('field response');
+
+  }
+}catch(e){
+  print(e);
+}
+
+  }
   @override
   void initState() {
 
@@ -33,9 +55,8 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
     if(startDate!=null){
       switch (searchSourceType) {
         case 'project_history_date':isTrue = true;
-
+        fetchData(startDate);
         break;
-
 
       }
 
@@ -43,11 +64,11 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
     return isTrue;
 
   }
-  void _onDateReset(){
-    Navigator.of(context).pop();
-
-
-  }
+  // void _onDateReset(){
+  //   Navigator.of(context).pop();
+  //
+  //
+  // }
   @override
   Widget build(BuildContext context) {
     return
@@ -66,9 +87,9 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        IconButton(onPressed: () => Navigator.of(context).pop(), icon: Icon(Icons.close)),
-                        Text('Select date range', style: TextStyle(fontFamily: 'Roboto', fontSize: 20.0, fontWeight: FontWeight.w500),),
-                        Spacer(),
+                        IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close)),
+                        const Text('Select date range', style: TextStyle(fontFamily: 'Roboto', fontSize: 20.0, fontWeight: FontWeight.w500),),
+                        const Spacer(),
                         TextButton(
                             onPressed:(){
                               Navigator.of(context).pop();
@@ -95,7 +116,7 @@ class _DateRangeBottomSheetModalState extends State<DateRangeBottomSheetModal> {
                         hasIcon: true,
                         name: 'Select date',
                         subName: 'Date',
-                        maximumDate: _startDate != null ? DateTime.parse(DateTime.now().toString()).subtract(Duration(days: 1)) : null,
+                        maximumDate: _startDate != null ? DateTime.parse(DateTime.now().toString()).subtract(const Duration(days: 1)) : null,
                         onChange: (val) {
                           setState(() {
                             _startDate = val;

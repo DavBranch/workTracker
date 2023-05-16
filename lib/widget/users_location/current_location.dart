@@ -13,7 +13,6 @@ class CurrentLocation extends StatefulWidget {
 }
 
 class _CurrentLocationState extends State<CurrentLocation> implements UsersLocation {
-  String? _currentAddress;
   Position? _currentPosition;
   @override
   Future<void> getCurrentPosition()async {
@@ -36,24 +35,32 @@ class _CurrentLocationState extends State<CurrentLocation> implements UsersLocat
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location services are disabled. Please enable the services')));
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Location services are disabled. Please enable the services')));
+      }
       return false;
     }
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are denied')));
+        if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied')));
+        }
+
         return false;
       }
     }
     if (permission == LocationPermission.deniedForever) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              'Location permissions are permanently denied, we cannot request permissions.')));
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+                'Location permissions are permanently denied, we cannot request permissions.')));
+      }
+
       return false;
     }
     return true;
@@ -68,7 +75,7 @@ class _CurrentLocationState extends State<CurrentLocation> implements UsersLocat
         .then((List<Placemark> placemarks) {
       Placemark place = placemarks[0];
       setState(() {
-        _currentAddress =
+
         '${place.street}, ${place.subLocality}, ${place.subAdministrativeArea}, ${place.postalCode}';
       });
     }).catchError((e) {
@@ -78,6 +85,6 @@ class _CurrentLocationState extends State<CurrentLocation> implements UsersLocat
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
-    return UsersScreen();
+    return const UsersScreen();
   }
 }

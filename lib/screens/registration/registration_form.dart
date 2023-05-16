@@ -4,6 +4,7 @@ import 'package:formz/formz.dart';
 import 'package:worktracker/services/blocs/register/register_bloc.dart';
 
 import '../../services/blocs/register/register_state.dart';
+import '../users/users.dart';
 
 class SignupForm extends StatelessWidget {
   const SignupForm({super.key});
@@ -14,11 +15,12 @@ class SignupForm extends StatelessWidget {
     return BlocListener<RegisterCubit, RegisterState>(
       listener: (context, state) {
         if (state.status.isSubmissionSuccess) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(content: Text('User Added')),
-            );
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                  builder: (context) =>
+                  const UsersScreen()),
+                  (Route<dynamic> route) =>
+              false);
         } else if (state.status.isSubmissionFailure) {
           ScaffoldMessenger.of(context)
             ..hideCurrentSnackBar()
@@ -33,7 +35,7 @@ class SignupForm extends StatelessWidget {
           child: Column(
             children: [
              const  Padding(
-                    padding: const EdgeInsets.only(top: 20),
+                    padding:  EdgeInsets.only(top: 20),
                     child: Center(child: Text('Add User',style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize: 22),),),
                   ),
 
@@ -80,7 +82,7 @@ class _UserNameInput extends StatelessWidget {
                 borderSide:const
                 BorderSide(width: 2,color: Colors.black),
                 borderRadius: BorderRadius.circular(12)),
-            labelText: 'userName',
+            labelText: 'User Name',
             labelStyle: const TextStyle(
               fontFamily: 'GHEAGrapalat',
               fontSize: 14,
@@ -263,7 +265,7 @@ class _SignupButtonState extends State<_SignupButton> {
 
         child:TextButton(
           onPressed: () {
-
+      print(state.status.isValidated);
             if (state.status.isValidated) {
               isActive();
               context.read<RegisterCubit>().signUpCredentials();
@@ -272,12 +274,14 @@ class _SignupButtonState extends State<_SignupButton> {
           style: TextButton.styleFrom(
             backgroundColor: Colors.grey.shade500,
 
-          ), child: const Text('Sign',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+          ), child: const Text('Add',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
         )
       );
     });
   }
-}class DropRolButton extends StatefulWidget {
+}
+
+class DropRolButton extends StatefulWidget {
   const DropRolButton({Key? key}) : super(key: key);
 
   @override
@@ -309,7 +313,6 @@ class _DropRolButtonState extends State<DropRolButton> {
 
         setState(() {
           dropdownvalue = newValue!;
-          print(dropdownvalue);
           context.read<RegisterCubit>().roleChanged(dropdownvalue.toLowerCase());
 
 

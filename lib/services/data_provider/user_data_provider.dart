@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worktracker/services/data_provider/session_data_providers.dart';
 
 import '../../base_data/base_api.dart';
+import '../models/info.dart';
 import '../models/user.dart';
 import '../models/user_info.dart';
 
@@ -21,46 +22,42 @@ class UserDataProvider {
 
   static const maxRefreshSeconds = 216000000;
   int seconds = maxAccesSeconds;
-  bool isAcces_Token_TimerActive = false;
-  bool isRefresh_Token_TimerActive = false;
+  bool isAccesTokenTimerActive = false;
+  bool isRefreshTokenTimerActive = false;
 
   get isDarkMode => null;
 
   void startAccessTimer() {
-    Timer.periodic(Duration(seconds: 1), (timer) {
+    Timer.periodic(const Duration(seconds: 1), (timer) {
       if (seconds > 0) {
         seconds--;
-        print(seconds);
       } else {
         timer.cancel();
-        isAcces_Token_TimerActive = true;
+        isAccesTokenTimerActive = true;
 
-        print('timer cancel');
       }
     });
   }
 
   void startRefreshTimer() {
-    Timer.periodic(Duration(milliseconds: 1), (timer) {
+    Timer.periodic(const Duration(milliseconds: 1), (timer) {
       if (seconds > 0) {
         seconds--;
-        print(seconds);
       } else {
         timer.cancel();
-        isRefresh_Token_TimerActive = true;
+        isRefreshTokenTimerActive = true;
 
-        print('timer cancel');
       }
     });
   }
 
 
   //Sign Up
-  Future<bool> signUp(
+  Future<String> signUp(
       {required String userName,
         required String password,
         required  String firstName,required String lastName,required String role}) async {
-    bool isSuscces;
+    String isSuscces = '';
 
     isSuscces = await createUserWithNAmeEmailAndPassword(
         userName: userName, password: password, firstName: firstName,lastName: lastName,role:role);
@@ -68,26 +65,15 @@ class UserDataProvider {
     return isSuscces;
   }
 
-  //Login
-  // LoginFuture<Map<String,dynamic>> logInWithEmailAndPassword({
-  //   required String userName,
-  //   required String password,
-  // }) async {
-  //   try {
-  //    return
-  //     await signInWithEmailAndPassword(userName: userName, password: password);
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  //   return {};
-  // }
+
 
   //Log out
   Future<void> logOut() async {
     try {
       await sessionDataProvider.deleteAllToken();
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
   }
 
@@ -109,38 +95,38 @@ class UserDataProvider {
         body: jsonEncode(userData),
       );
       var body = jsonDecode(response.body);
-      var status =body['status'];
+      var status = body['status'];
       var data = body['data'];
 
       if (response.statusCode == 200 && status == true) {
-        print('success');
-        var access_token = data['access_token'];
-        var refresh_token = data['refresh_token'];
+        var accessToken = data['access_token'];
+        var refreshToken = data['refresh_token'];
         var role = data['is_user'];
-        sessionDataProvider.setAccessToken(access_token);
+        sessionDataProvider.setAccessToken(accessToken);
         sessionDataProvider.setRole(role.toString());
-
-        sessionDataProvider.setRefreshToken(refresh_token);
+        sessionDataProvider.setRefreshToken(refreshToken);
         return data;
       } else {
-        print("failed");
-        return {};
+        return body;
       }
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+
     }
     return {};
   }
 
   //Signup
-  Future<bool> createUserWithNAmeEmailAndPassword(
-      {String? userName, String? password, String? firstName,String? lastName,String? role}) async {
+  Future<String> createUserWithNAmeEmailAndPassword(
+      {String? userName, String? password, String? firstName, String? lastName, String? role}
+      ) async {
+
     Map userData = {
-      'first_name': firstName,
-      'last_name': lastName,
-      'password': password,
-      'username': userName,
-      'role':role,
+      'first_name': firstName ?? '',
+      'last_name': lastName ?? '',
+      'password': password ?? '',
+      'username': userName ?? '',
+      'role': role ?? '',
     };
 
     try {
@@ -154,91 +140,81 @@ class UserDataProvider {
       var body = jsonDecode(response.body);
       var status = body['status'];
       if (status == true) {
-        var access_token = body['access_token'];
-        var refresh_token = body['refresh_token'];
-        var role = body['role'];
-        sessionDataProvider.setAccessToken(access_token);
-        sessionDataProvider.setRole(role);
-        sessionDataProvider.setRefreshToken(refresh_token);
-        return true;
+       var role =  body['data']['role'];
+         sessionDataProvider.setRole(role);
+        return ''; // Return an empty string to indicate success
       } else {
-        return false;
+        var errorMessage = body['message'];
+        return errorMessage; // Return the error message
       }
     } catch (e) {
-      print(e);
+      debugPrint('$e');
+      return 'An error occurred while creating the user.'; // Return a generic error message
     }
-    return false;
   }
 
 
 
-  Future<bool> refreshToken() async {
+
+  Future<bool> refresh() async {
     final refreshToken = await sessionDataProvider.readRefreshToken();
     final accessToken = await sessionDataProvider.readsAccessToken();
     if (refreshToken != null) {
       try {
-        final response = await http.post(Uri.parse(Api.refresh), headers: {
-          'Authorization': 'bearer $accessToken',
-          'Contnet-type': "application/json",
-        }, body: <String, dynamic>{
-          'refresh_token': '$refreshToken',
-        });
-        ;
-        var body = jsonDecode(response.body);
+        final client = http.Client();
+        final response = await client.post(Uri.parse(Api.refresh),
+            headers: {
+              'Authorization': 'bearer $accessToken',
+              'Content-Type': "application/json",
+            },
+            body: <String, dynamic>{'refresh_token': refreshToken}).timeout(const Duration(seconds: 30));
 
         if (response.statusCode == 200) {
-          var accessToken = body['access_token'];
-
-          sessionDataProvider.setAccessToken(accessToken);
-
+          var body = jsonDecode(response.body);
+          var newAccessToken = body['access_token'];
+          if (newAccessToken == null) {
+            // Invalid response, handle error
+            debugPrint('Invalid response body: $body');
+            return false;
+          }
+          sessionDataProvider.setAccessToken(newAccessToken);
           return true;
-        } else if (isRefresh_Token_TimerActive) {
-          sessionDataProvider.deleteAllToken();
+        } else if (response.statusCode == 401) {
+          // Unauthorized, token expired or invalid
+          var body = jsonDecode(response.body);
+          if (body['error'] == 'invalid_grant') {
+            // Refresh token expired or invalid, prompt user to log in again
+            sessionDataProvider.deleteAllToken();
+          } else {
+            // Access token expired or invalid, refresh token still valid, try again
+            await Future.delayed(const Duration(seconds: 5)); // Wait for 5 seconds before retrying
+            return await refresh();
+          }
+        } else {
+          // Other error, handle appropriately
+          debugPrint('Request failed with status code: ${response.statusCode}');
           return false;
         }
       } catch (e) {
-        print(e);
+        // Network or server error, handle appropriately
+        debugPrint('Request failed: $e');
         return false;
       }
     }
     return false;
   }
-  Future<User?> updateUser({firstName,lastName, userName,id}) async {
-    final accessToken = await sessionDataProvider.readsAccessToken();
 
-    Map userData = {
-      'location': firstName,
+  Future<Map> updateMyAccountFromApi({firstName, lastName, userName,role,password,id}) async {
+    var token = await sessionDataProvider.readsAccessToken();
 
-    };
-
-    try {
-      final response = await http.post(Uri.parse(Api.updateUser(id)),
-          headers: {
-        'Contnet-type': "application/json",
-        'Authorization': 'Bearer $accessToken'
-      }, body:
-        jsonEncode(userData)
-      );
-
-      var body = jsonDecode(response.body);
-      var data = body['data'];
-      var status = body['status'];
-
-
-      if (status == true) {
-        print( User.fromJson(data).firstName);
-     return User.fromJson(data);
-      }
-    } catch(e){
-print(e);
+    if (token == null) {
+      // Access token is not available, cannot make the request
+      return {
+        'errors': {
+          'network': 'Access token not available'
+        }
+      };
     }
-  return null;
-  }
-
-  Future<Map> updateMyAccountFromApi({firstName, lastName, jobTitle,id}) async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    String? token = sharedPreferences.getString('token');
-
     final requestBody = {};
 
     if (firstName != null && firstName != '') {
@@ -249,22 +225,61 @@ print(e);
       requestBody["last_name"] = lastName;
     }
 
-    if (jobTitle != null) {
-      requestBody["username"] = jobTitle;
+    if (userName != null && userName != '') {
+      requestBody["username"] = userName;
     }
-     requestBody['location'] = {'lat':'93095659','long':'374'};
+    if (password != null && password != '' )  {
+      requestBody["password"] = password;
+    }
+    if (role != null && role != '' ) {
+      requestBody["role"] = role;
+    }
     try {
+      final client = http.Client();
       final response = await client.post(
           Uri.parse(Api.updateUser(id)),
-          headers: {HttpHeaders.authorizationHeader: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3BocGxhcmF2ZWwtODg1NDA4LTMwNjk0ODMuY2xvdWR3YXlzYXBwcy5jb20vYXBpL2xvZ2luIiwiaWF0IjoxNjcwMTc3NTMwLCJleHAiOjE2NzAzOTM1MzAsIm5iZiI6MTY3MDE3NzUzMCwianRpIjoiY0VEcWZtQVNacDB2UmVVWCIsInN1YiI6IjEiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3In0.v9qp9O7AodhCmfpV9KwFXvDVVKLQiT63VIGYA_rO_eI"},
+          headers: {HttpHeaders.authorizationHeader: "Bearer $token"},
           body: requestBody
-      ).timeout(Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 10));
 
-      return jsonDecode(response.body);
+      if (response.statusCode == 401) {
+        // Unauthorized, token expired or invalid
+        final refreshed = await refresh();
+        if (refreshed) {
+          // Token refreshed successfully, retry the request
+          return await updateMyAccountFromApi(
+              firstName: firstName,
+              lastName: lastName,
+              userName: userName,
+              password: password,
+              role: role,
+              id: id
+          );
+        } else {
+          // Token refresh failed, prompt user to log in again
+          sessionDataProvider.deleteAllToken();
+          return {
+            'errors': {
+              'network': 'Access token expired or invalid, please log in again'
+            }
+          };
+        }
+      } else if (response.statusCode == 200) {
+        // Request successful, return response body
+        return jsonDecode(response.body);
+      } else {
+        // Other error, handle appropriately
+        debugPrint('Request failed with status code: ${response.statusCode}');
+        return {
+          'errors': {
+            'network': 'Something went wrong'
+          }
+        };
+      }
     } on TimeoutException catch (_) {
       return {
         'errors': {
-          'network': 'Something went wrong'
+          'network': 'Request timed out, please try again'
         }
       };
     } on Error catch (_) {
@@ -280,9 +295,9 @@ print(e);
         }
       };
     }
-
   }
-    Future<List<User>> getUser() async {
+
+  Future<List<User>> getUser() async {
       var dialects = <User>[];
       try {
         var response = await http.get(
@@ -293,17 +308,16 @@ print(e);
         );
         var body = json.decode(response.body);
         var success = body['status'];
-        var datas = body['data'];
+        var data = body['data'];
         if (success == true) {
-          var user = List.from(datas).where((element) => element['role'] == 'user').toList().map((e) => User.fromJson(e)).toList();
+
+          var user = List.from(data).toList().map((e) => User.fromJson(e)).toList();
 
           return user;
         } else {
-          print("failed");
           return dialects;
         }
       } catch (e) {
-        print(e);
         throw Exception(e);
       }
     }
@@ -332,11 +346,9 @@ print(e);
 
         return user;
       } else {
-        print("failed");
         return dialects;
       }
     } catch (e) {
-      print(e);
       throw Exception(e);
     }
   }
@@ -356,21 +368,21 @@ print(e);
 
         return user;
       } else {
-        print("failed");
         return dialects;
       }
     } catch (e) {
-      print(e);
       throw Exception(e);
     }
   }
     Future<User> getUserById(String userId) async {
+      var token = await sessionDataProvider.readsAccessToken();
+
       var users = User();
       var response = await http.get(
         Uri.parse(Api.getUser(userId)),
         headers: <String, String>{
           'Content-Type': 'application/json',
-         HttpHeaders.authorizationHeader: "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3BocGxhcmF2ZWwtODg1NDA4LTMwNjk0ODMuY2xvdWR3YXlzYXBwcy5jb20vYXBpL2xvZ2luIiwiaWF0IjoxNjcwMTc3NTMwLCJleHAiOjE2NzAzOTM1MzAsIm5iZiI6MTY3MDE3NzUzMCwianRpIjoiY0VEcWZtQVNacDB2UmVVWCIsInN1YiI6IjEiLCJwcnYiOiIyM2JkNWM4OTQ5ZjYwMGFkYjM5ZTcwMWM0MDA4NzJkYjdhNTk3NmY3In0.v9qp9O7AodhCmfpV9KwFXvDVVKLQiT63VIGYA_rO_eI",
+         HttpHeaders.authorizationHeader: "Bearer $token",
 
 
         },
@@ -388,12 +400,20 @@ print(e);
 
           return  User.fromJson(data);
 
-        } else {
-          print("failed");
+        }else if (isAccesTokenTimerActive || response.statusCode == 401) {
+          bool isTrue = await refresh();
+
+          if (isTrue) {
+            return await getUserById(userId); // Call saveFavorite recursively after refreshing token
+          } else {
+            return users;
+          }
+        }  else {
           return users;
         }
       } catch (e) {
-        print(e);
+        debugPrint('$e');
+
       }
       return users;
     }
@@ -409,13 +429,32 @@ print(e);
       var success = body['status'];
       if (success == true) {
         return true;
-      } else {
-        print("failed");
+      } else if (isAccesTokenTimerActive || response.statusCode == 401) {
+        bool isTrue = await refresh();
+
+        if (isTrue) {
+          return await deleteUser(id); // Call saveFavorite recursively after refreshing token
+        } else {
+          return false;
+        }
+      }else {
+        debugPrint('Delete $success');
         return false;
       }
     } catch (e) {
-      print(e);
       throw Exception(e);
+    }
+  }
+  Future<InfoUser?> fetchInfoUser(http.Client client) async {
+    final response =
+    await client.get(Uri.https('165.227.204.177', '/api/info'));
+
+    if (response.statusCode == 200) {
+      // If the call to the server was successful, parse the JSON
+      return InfoUser.fromJson(json.decode(response.body));
+    } else {
+      // If that call was not successful, throw an error.
+      throw Exception('Failed to load InfoUser');
     }
   }
   }

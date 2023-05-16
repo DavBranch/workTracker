@@ -27,7 +27,7 @@ class EditMyInfoAppBar extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          Container(
+          SizedBox(
             width: 56.0,
             height: 56.0,
             child: Material(
@@ -37,19 +37,17 @@ class EditMyInfoAppBar extends StatelessWidget {
                   Navigator.of(context, rootNavigator: true).pop('dialog');
                 } ,
                 borderRadius: const BorderRadius.all(Radius.circular(28.0)),
-                child: Container(
-                  child: const Icon(
-                    Icons.close,
-                    color: Color(0xFF212121),
-                    size: 24.0,
-                  ),
+                child: const Icon(
+                  Icons.close,
+                  color: Color(0xFF212121),
+                  size: 24.0,
                 ),
               ),
             ),
           ),
            Expanded(
             child: Text( isShowInfo==false? 'User Info':'Edit my info',
-              style: TextStyle(
+              style: const TextStyle(
                 decoration: TextDecoration.none,
                 fontFamily: 'Roboto',
                 fontWeight: FontWeight.w600,
@@ -59,7 +57,7 @@ class EditMyInfoAppBar extends StatelessWidget {
               ),
             ),
           ),
-          isShowInfo==false? SizedBox(): Container(
+          isShowInfo==false? const SizedBox(): Container(
             width: 56.0,
             height: 56.0,
             margin: const EdgeInsets.only(right: 0.0),

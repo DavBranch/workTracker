@@ -20,8 +20,9 @@ class LoginForm extends StatelessWidget {
       return BlocListener<LoginCubit, LoginState>(
         listener: (context, state) {
           if (state.status.isSubmissionSuccess && state.isUser!=null) {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (_) => state.isUser == true? const UserScreen():UsersScreen()));
+            Navigator.of(context,rootNavigator: true).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) =>  state.isUser == true? const UserScreen():const UsersScreen()),(Route<dynamic> route) => false);
+
           } else if (state.status.isSubmissionFailure) {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()

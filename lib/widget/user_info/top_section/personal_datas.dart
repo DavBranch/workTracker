@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class PersonalDatas extends StatelessWidget {
+class PersonalData extends StatelessWidget {
   final String fullName;
   final String lastName;
   final String userName;
   final bool isLoading;
   final String role;
 
-  const PersonalDatas({
+  const PersonalData({super.key,
     required this.fullName,
     required this.lastName,
     required this.role,
@@ -23,9 +23,9 @@ class PersonalDatas extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Container(
-            margin: EdgeInsets.only(top: 2.0, right: 8.0),
+            margin: const EdgeInsets.only(top: 2.0, right: 8.0),
             child: Text(!fullName.toString().contains('null')? "First Name - $fullName":'',
-              style: TextStyle(
+              style: const TextStyle(
                 fontFamily: 'Roboto',
                 fontSize: 18,
                 color: Color(0xFF212121),
@@ -43,9 +43,9 @@ class PersonalDatas extends StatelessWidget {
                 letterSpacing: 0.014,
               ),
             ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           Container(
-            margin: EdgeInsets.only(top: 7.0),
+            margin: const EdgeInsets.only(top: 7.0),
             child:Text(
              !userName.toString().contains('null')? "User Name - $userName":'',
               style:const TextStyle(

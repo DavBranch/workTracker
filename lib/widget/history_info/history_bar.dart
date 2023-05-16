@@ -41,7 +41,7 @@ class HistoryInfoAppBar extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
+          const Expanded(
             child: Text( 'Hisorty',
               style: TextStyle(
                 decoration: TextDecoration.none,
